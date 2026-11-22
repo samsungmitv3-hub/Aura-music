@@ -766,10 +766,12 @@
             artist: folderName,
             album: folderName,
             format: formatLabel,
+            mimeType: file.mimeType || (formatLabel === 'M4A' ? 'audio/mp4' : formatLabel === 'WAV' ? 'audio/wav' : formatLabel === 'OGG' ? 'audio/ogg' : 'audio/mpeg'),
             duration: 0,
             colors: palette.colors,
             artType: palette.artType,
             audioUrl: mediaStreamUrl,
+            fallbackUrl: `https://drive.usercontent.google.com/download?id=${encodeURIComponent(file.id)}&export=download&confirm=t`,
             blobUrl: null,
             lyrics: [{ time: 0, text: `Streaming "${cleanTitle}" from ${folderName}` }]
           };
@@ -852,7 +854,7 @@
     }
 
     async function fetchDriveAudioAsBlob(track, token) {
-      setStreamStatusBadge(`Buffering ${track.format}...`);
+      setStreamStatusBadge(`Downloading ${track.format}...`);
       const res = await fetch(track.audioUrl);
       if (!res.ok) {
         let errMsg = `HTTP ${res.status}`;
@@ -862,14 +864,15 @@
         } catch (e) {}
         throw new Error(errMsg);
       }
-      const blob = await res.blob();
+      const arrayBuffer = await res.arrayBuffer();
       if (token !== activeStreamToken) return null;
-      const objectUrl = URL.createObjectURL(blob);
+      const typedBlob = new Blob([arrayBuffer], { type: track.mimeType || 'audio/mpeg' });
+      const objectUrl = URL.createObjectURL(typedBlob);
       track.blobUrl = objectUrl;
       return objectUrl;
     }
 
-    function startPlaybackEngine() {
+    function startPlaybackEngine(fromUserGesture = false) {
       const track = currentTrack();
       if (!track) return;
 
@@ -896,7 +899,7 @@
       };
 
       htmlAudio.onplaying = () => {
-        setStreamStatusBadge(`Google Drive • ${track.format}`);
+        setStreamStatusBadge(`Playing • ${track.format}`);
         updatePlayerUI();
       };
 
@@ -904,20 +907,46 @@
         setStreamStatusBadge(`Buffering ${track.format}...`);
       };
 
-      const handleMediaFallback = async () => {
+      let triedFallbackUrl = false;
+      const handleMediaFallback = async (errEvent) => {
         if (token !== activeStreamToken) return;
+
+        // If iOS Safari blocked autoplay without a user tap, pause cleanly for tap
+        if (errEvent && errEvent.name === 'NotAllowedError') {
+          state.isPlaying = false;
+          setStreamStatusBadge('Tap Play to Start');
+          updatePlayerUI();
+          showToast('Tap Play to start audio on iOS');
+          return;
+        }
+
+        // First try typed Blob download via Drive API v3
         if (!track.blobUrl) {
           try {
             const blobUrl = await fetchDriveAudioAsBlob(track, token);
             if (!blobUrl || token !== activeStreamToken) return;
             htmlAudio.src = blobUrl;
+            htmlAudio.load();
             htmlAudio.currentTime = state.currentTime;
             htmlAudio.volume = state.volume;
             await htmlAudio.play();
-            setStreamStatusBadge(`Google Drive • ${track.format}`);
+            setStreamStatusBadge(`Playing • ${track.format}`);
             return;
           } catch (err) {
             if (token !== activeStreamToken) return;
+            // Second fallback: direct usercontent download endpoint
+            if (!triedFallbackUrl && track.fallbackUrl) {
+              triedFallbackUrl = true;
+              htmlAudio.src = track.fallbackUrl;
+              htmlAudio.load();
+              htmlAudio.play().catch(() => {
+                state.isPlaying = false;
+                setStreamStatusBadge('Stream Error');
+                updatePlayerUI();
+                showToast(`Drive Error: ${err.message}`);
+              });
+              return;
+            }
             state.isPlaying = false;
             setStreamStatusBadge('Stream Error');
             updatePlayerUI();
@@ -925,22 +954,28 @@
             return;
           }
         }
+
         state.isPlaying = false;
         setStreamStatusBadge('Stream Unavailable');
         updatePlayerUI();
-        showToast('Unable to stream audio from Google Drive');
+        showToast('Unable to decode audio file');
       };
 
-      htmlAudio.onerror = handleMediaFallback;
+      htmlAudio.onerror = () => handleMediaFallback();
       htmlAudio.onended = () => handleTrackEnded();
 
-      if (htmlAudio.src !== targetSrc) {
-        htmlAudio.src = targetSrc;
+      // Synchronously assign & call load()+play() inside the user's tap call stack for iOS Safari
+      htmlAudio.src = targetSrc;
+      htmlAudio.load();
+      if (state.currentTime > 0) {
+        try { htmlAudio.currentTime = state.currentTime; } catch (e) {}
       }
-      htmlAudio.currentTime = state.currentTime;
       htmlAudio.volume = state.volume;
 
-      htmlAudio.play().catch(handleMediaFallback);
+      const playPromise = htmlAudio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((err) => handleMediaFallback(err));
+      }
 
       progressTimer = setInterval(() => {
         if (!state.isPlaying) return;
@@ -977,7 +1012,7 @@
         updatePlayerUI();
         if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
       } else {
-        startPlaybackEngine();
+        startPlaybackEngine(true);
         if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
       }
     }
@@ -994,7 +1029,7 @@
       state.currentTime = 0;
       if (contextLabel) state.contextLabel = contextLabel;
 
-      startPlaybackEngine();
+      startPlaybackEngine(true);
       renderCurrentTab();
     }
 
@@ -1777,9 +1812,9 @@
       renderCurrentTab();
       startVisualizerLoop();
 
-      // Auto-load & sequentially play linked Google Drive folder if already saved
+      // Load saved Google Drive folder song list immediately; user tap starts native iOS audio
       if (state.driveConfig && state.driveConfig.folderId && state.driveConfig.apiKey) {
-        fetchGoogleDriveFolderSongs(state.driveConfig.folderId, state.driveConfig.apiKey, true);
+        fetchGoogleDriveFolderSongs(state.driveConfig.folderId, state.driveConfig.apiKey, false);
       }
     };
   </script>
