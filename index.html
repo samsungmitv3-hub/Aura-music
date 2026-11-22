@@ -266,12 +266,12 @@
     </div>
 
     <!-- Top Sticky Header -->
-    <header id="app-header" class="z-20 px-5 pt-[calc(var(--sat)+14px)] pb-3 flex items-end justify-between border-b border-black/[0.06] dark:border-white/[0.08] liquid-glass-header transition-colors">
-      <div>
+    <header id="app-header" class="z-20 px-5 pt-[calc(var(--sat)+12px)] pb-3 flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] liquid-glass-header transition-colors">
+      <div class="min-w-0">
         <p id="header-subtitle" class="text-[11px] font-semibold uppercase tracking-[0.06em] text-zinc-500 dark:text-zinc-400 mb-0.5">Saturday, Nov 21</p>
-        <h1 id="header-title" class="text-[30px] leading-none font-bold tracking-[-0.025em] text-zinc-900 dark:text-white">Listen Now</h1>
+        <h1 id="header-title" class="text-[28px] leading-none font-bold tracking-[-0.025em] text-zinc-900 dark:text-white truncate">SP MUSIC</h1>
       </div>
-      <div class="flex items-center gap-2 pb-0.5">
+      <div class="flex items-center gap-2 shrink-0">
         <!-- Refresh Google Drive Library Button -->
         <button onclick="rescanDriveFolder()" id="header-refresh-btn" class="hidden w-9 h-9 rounded-full liquid-pill-btn flex items-center justify-center text-zinc-700 dark:text-white" title="Refresh Google Drive Library">
           <span id="icon-header-refresh"></span>
@@ -290,12 +290,15 @@
     </header>
 
     <!-- Main Scrollable Tab Content Area -->
-    <main id="main-scroll" class="flex-1 overflow-y-auto no-scrollbar px-5 pt-4 pb-48 space-y-7">
+    <main id="main-scroll" class="flex-1 overflow-y-auto no-scrollbar px-4 pt-4 pb-56 space-y-6">
       <!-- Views dynamically injected by JS -->
     </main>
 
+    <!-- Smooth Bottom Gradient Mask so Scrolled Rows Don't Peek Under Floating Bars -->
+    <div class="pointer-events-none fixed inset-x-0 bottom-0 h-[calc(155px+var(--sab))] z-20 max-w-2xl mx-auto bg-gradient-to-t from-ios-lightBg via-ios-lightBg/95 to-transparent dark:from-black dark:via-black/95 dark:to-transparent"></div>
+
     <!-- Floating Liquid Glass Mini-Player Capsule (Hidden when no Google Drive folder tracks exist) -->
-    <div id="mini-player-container" class="hidden fixed left-0 right-0 bottom-[calc(76px+var(--sab)+10px)] z-30 px-4 max-w-2xl mx-auto pointer-events-none">
+    <div id="mini-player-container" class="hidden fixed left-0 right-0 bottom-[calc(76px+var(--sab)+12px)] z-30 px-4 max-w-2xl mx-auto pointer-events-none">
       <div id="mini-player" onclick="openNowPlaying()" class="pointer-events-auto relative w-full rounded-[22px] p-2 pr-3 flex items-center justify-between gap-3 liquid-glass cursor-pointer active:scale-[0.985] transition-transform">
         <!-- Mini Artwork + Title -->
         <div class="flex items-center gap-3 min-w-0 flex-1">
@@ -1544,11 +1547,12 @@
 
     function renderAlbumArtwork(track, sizeClass = 'w-12 h-12') {
       const [c1, c2, c3] = (track && track.colors) || ['#fa2d48', '#8e44ad', '#141418'];
-      const letter = ((track && track.title) || 'A').trim().charAt(0).toUpperCase();
+      const cleanedName = ((track && track.title) || 'M').replace(/^[\d\s._-]+/, '').trim();
+      const letter = (cleanedName || (track && track.title) || 'M').charAt(0).toUpperCase();
       return `
         <div class="${sizeClass} relative overflow-hidden flex items-center justify-center" style="background: linear-gradient(135deg, ${c1}, ${c2} 60%, ${c3});">
           <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.32),transparent_60%)]"></div>
-          <span class="relative font-bold text-white/95 drop-shadow select-none" style="font-size: clamp(13px, 34%, 34px);">${escapeHtml(letter)}</span>
+          <span class="relative font-bold text-white/95 drop-shadow select-none" style="font-size: clamp(14px, 36%, 34px);">${escapeHtml(letter)}</span>
         </div>
       `;
     }
