@@ -178,6 +178,62 @@
     .ambient-orb {
       animation: floatSlow 14s ease-in-out infinite;
     }
+
+    /* Vinyl Turntable Disc & Tonearm Animations */
+    @keyframes vinylSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .vinyl-disc-spin {
+      animation: vinylSpin 7.5s linear infinite;
+      animation-play-state: paused;
+    }
+    .vinyl-disc-spin.is-spinning {
+      animation-play-state: running;
+    }
+
+    .vinyl-grooves {
+      background:
+        radial-gradient(circle at center,
+          transparent 0%,
+          transparent 31%,
+          rgba(255, 255, 255, 0.06) 31.5%,
+          rgba(12, 12, 15, 0.96) 33%,
+          rgba(32, 32, 38, 0.85) 39%,
+          rgba(10, 10, 13, 0.98) 45%,
+          rgba(34, 34, 40, 0.85) 52%,
+          rgba(10, 10, 13, 0.98) 59%,
+          rgba(34, 34, 40, 0.85) 66%,
+          rgba(10, 10, 13, 0.98) 73%,
+          rgba(30, 30, 36, 0.85) 81%,
+          rgba(10, 10, 13, 0.98) 90%,
+          rgba(255, 255, 255, 0.14) 99%,
+          rgba(0, 0, 0, 0.95) 100%
+        );
+    }
+
+    .vinyl-sheen {
+      background: conic-gradient(
+        from 35deg at 50% 50%,
+        transparent 0deg,
+        rgba(255, 255, 255, 0.13) 28deg,
+        transparent 62deg,
+        transparent 180deg,
+        rgba(255, 255, 255, 0.11) 210deg,
+        transparent 245deg,
+        transparent 360deg
+      );
+    }
+
+    .tonearm-pivot {
+      transform-origin: 24px 24px;
+      transition: transform 0.75s cubic-bezier(0.34, 1.36, 0.64, 1);
+      transform: rotate(-28deg);
+    }
+    .tonearm-pivot.is-playing {
+      transform: rotate(3deg);
+    }
   </style>
 </head>
 <body class="bg-ios-lightBg text-zinc-900 dark:bg-black dark:text-white select-none">
@@ -318,16 +374,59 @@
       <!-- Main Body of Now Playing -->
       <div class="relative z-10 flex-1 flex flex-col justify-between px-7 pb-[calc(var(--sab)+20px)] overflow-hidden">
         
-        <!-- VIEW 1: ALBUM ARTWORK + VISUALIZER -->
+        <!-- VIEW 1: VINYL TURNTABLE PLAYER + RHYTHM GROOVE RING -->
         <div id="np-artwork-view" class="flex-1 flex flex-col items-center justify-center my-2 min-h-0">
-          <div id="np-art-wrapper" class="artwork-spring w-full max-w-[295px] sm:max-w-[325px] aspect-square rounded-[28px] shadow-[0_28px_65px_rgba(0,0,0,0.72)] ring-1 ring-white/15 overflow-hidden relative scale-95">
-            <!-- Injected Large SVG Artwork -->
+          <div class="relative w-full max-w-[305px] sm:max-w-[335px] aspect-square flex items-center justify-center">
+            <!-- Outer Rhythm-Reactive Ambient Ring Canvas -->
+            <canvas id="visualizer-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+
+            <!-- Turntable Platter Base -->
+            <div class="relative w-[84%] h-[84%] rounded-full bg-zinc-950/90 p-2 shadow-[0_28px_65px_rgba(0,0,0,0.82)] ring-1 ring-white/15 flex items-center justify-center">
+              <!-- Spinning Vinyl Record -->
+              <div id="vinyl-disc" class="vinyl-disc-spin relative w-full h-full rounded-full vinyl-grooves shadow-inner flex items-center justify-center overflow-hidden">
+                <!-- Specular Light Reflection Sheen -->
+                <div class="absolute inset-0 vinyl-sheen pointer-events-none"></div>
+
+                <!-- Center Album Artwork Label -->
+                <div id="np-art-wrapper" class="relative w-[42%] h-[42%] rounded-full overflow-hidden ring-2 ring-white/25 shadow-lg">
+                  <!-- Injected Dynamic Album Artwork -->
+                </div>
+
+                <!-- Center Spindle Hole -->
+                <div class="absolute w-3.5 h-3.5 rounded-full bg-zinc-950 ring-2 ring-white/40 shadow-inner z-10"></div>
+              </div>
+            </div>
+
+            <!-- Articulated Tonearm & Stylus -->
+            <div id="vinyl-tonearm" class="tonearm-pivot pointer-events-none absolute -top-1 right-2 w-28 h-48 z-20 drop-shadow-[0_10px_14px_rgba(0,0,0,0.65)]">
+              <svg viewBox="0 0 110 190" class="w-full h-full overflow-visible">
+                <!-- Gimbal Pivot Base -->
+                <circle cx="84" cy="24" r="18" fill="#27272a" stroke="rgba(255,255,255,0.22)" stroke-width="2"/>
+                <circle cx="84" cy="24" r="9" fill="#52525b"/>
+                <circle cx="84" cy="24" r="3.5" fill="#e4e4e7"/>
+                <!-- Counterweight -->
+                <rect x="77" y="2" width="14" height="10" rx="3" fill="#a1a1aa"/>
+                <!-- S-Curved Metallic Arm -->
+                <path d="M 84 24 L 84 88 Q 84 112 64 128 L 42 146" fill="none" stroke="url(#armGrad)" stroke-width="4.5" stroke-linecap="round"/>
+                <!-- Headshell & Cartridge -->
+                <g transform="translate(42, 146) rotate(36)">
+                  <rect x="-5" y="-2" width="10" height="20" rx="2.5" fill="#18181b" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
+                  <circle cx="0" cy="15" r="2" fill="#fa2d48"/>
+                </g>
+                <defs>
+                  <linearGradient id="armGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#f4f4f5"/>
+                    <stop offset="50%" stop-color="#a1a1aa"/>
+                    <stop offset="100%" stop-color="#e4e4e7"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
           </div>
 
-          <!-- Live Frequency Visualizer Canvas -->
-          <div class="w-full max-w-[310px] h-12 mt-5 flex items-center justify-center">
-            <canvas id="visualizer-canvas" class="w-full h-full rounded-xl"></canvas>
-          </div>
+          <p id="vinyl-status-label" class="mt-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">
+            33⅓ RPM • Analog Vinyl Mode
+          </p>
         </div>
 
         <!-- VIEW 2: SYNCHRONIZED LYRICS -->
@@ -662,52 +761,48 @@
     ];
 
     // ----------------------------------------------------------------------------
-    // 1. PERSISTENT APPLICATION STATE
+    // 1. PERSISTENT STATE & LOCAL STORAGE
     // ----------------------------------------------------------------------------
     let savedDriveConfig = null;
-    let savedLikes = [];
+    let savedLikedIds = [];
     let savedSession = null;
+
     try {
       savedDriveConfig = JSON.parse(localStorage.getItem('aura_drive_folder_cfg') || 'null');
-      savedLikes = JSON.parse(localStorage.getItem('aura_liked_ids') || '[]');
-      savedSession = JSON.parse(localStorage.getItem('aura_playback_session') || 'null');
+      savedLikedIds = JSON.parse(localStorage.getItem('aura_drive_liked_ids') || '[]');
+      savedSession = JSON.parse(localStorage.getItem('aura_drive_session') || 'null');
     } catch (e) {}
 
     const state = {
       activeTab: 'listen',
-      npMode: 'artwork',
-      driveConfig: savedDriveConfig,
       tracks: [],
       queue: [],
       currentTrackIndex: 0,
       isPlaying: false,
-      currentTime: savedSession?.currentTime || 0,
+      currentTime: (savedSession && savedSession.currentTime) || 0,
       volume: 0.85,
-      shuffle: savedSession?.shuffle || false,
-      repeat: savedSession?.repeat || 'all',
-      likedIds: new Set(savedLikes),
+      shuffle: !!(savedSession && savedSession.shuffle),
+      repeat: (savedSession && savedSession.repeat) || 'all',
+      likedIds: new Set(savedLikedIds),
       searchQuery: '',
-      contextLabel: savedDriveConfig?.folderName || 'Google Drive Folder',
+      npMode: 'artwork',
+      contextLabel: (savedDriveConfig && savedDriveConfig.folderName) || 'Google Drive Folder',
       airplayDevice: 'iPhone',
+      driveConfig: savedDriveConfig,
       isLoadingFolder: false,
       folderError: '',
       wakeLock: null
     };
 
-    const htmlAudio = document.getElementById('ios-bg-audio');
-    htmlAudio.volume = state.volume;
-    const blobCache = new Map();
-    const pendingFetches = new Map();
-
     function currentTrack() {
-      if (!state.queue.length || !state.tracks.length) return null;
-      const id = state.queue[state.currentTrackIndex];
-      return state.tracks.find(t => t.id === id) || null;
+      if (!state.queue.length) return state.tracks[0] || null;
+      const activeId = state.queue[state.currentTrackIndex];
+      return state.tracks.find(t => t.id === activeId) || state.tracks[0] || null;
     }
 
     function saveUserData() {
       try {
-        localStorage.setItem('aura_liked_ids', JSON.stringify(Array.from(state.likedIds)));
+        localStorage.setItem('aura_drive_liked_ids', JSON.stringify(Array.from(state.likedIds)));
         if (state.driveConfig) {
           localStorage.setItem('aura_drive_folder_cfg', JSON.stringify(state.driveConfig));
         } else {
@@ -719,7 +814,7 @@
     function savePlaybackSession() {
       try {
         const tr = currentTrack();
-        localStorage.setItem('aura_playback_session', JSON.stringify({
+        localStorage.setItem('aura_drive_session', JSON.stringify({
           trackId: tr ? tr.id : null,
           currentTime: state.currentTime || 0,
           shuffle: state.shuffle,
@@ -730,89 +825,93 @@
 
     function updateHeaderRefreshState() {
       const refreshBtn = document.getElementById('header-refresh-btn');
+      const refreshIcon = document.getElementById('icon-header-refresh');
       const linkedDot = document.getElementById('settings-linked-dot');
-      const hasFolder = Boolean(state.driveConfig && state.driveConfig.folderId);
-      if (refreshBtn) {
-        refreshBtn.classList.toggle('hidden', !hasFolder);
-        const iconSpan = document.getElementById('icon-header-refresh');
-        if (iconSpan) iconSpan.classList.toggle('animate-spin', state.isLoadingFolder);
-      }
-      if (linkedDot) {
-        linkedDot.classList.toggle('hidden', !hasFolder);
-      }
+      const hasFolder = !!(state.driveConfig && state.driveConfig.folderId);
+
+      if (refreshBtn) refreshBtn.classList.toggle('hidden', !hasFolder);
+      if (linkedDot) linkedDot.classList.toggle('hidden', !hasFolder);
+      if (refreshIcon) refreshIcon.classList.toggle('animate-spin', state.isLoadingFolder);
     }
 
-    // ----------------------------------------------------------------------------
-    // 2. GOOGLE DRIVE FOLDER API v3 SCANNER & PERSISTENT LINK
-    // ----------------------------------------------------------------------------
     function extractDriveFolderId(input) {
-      const trimmed = (input || '').trim();
-      const folderMatch = trimmed.match(/\/folders\/([a-zA-Z0-9_-]+)/);
+      if (!input) return '';
+      const trimmed = input.trim();
+      const folderMatch = trimmed.match(/\/folders\/([a-zA-Z0-9_-]{10,})/);
       if (folderMatch) return folderMatch[1];
-      const idParamMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      const idParamMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
       if (idParamMatch) return idParamMatch[1];
-      return trimmed;
+      if (/^[a-zA-Z0-9_-]{10,}$/.test(trimmed)) return trimmed;
+      return '';
     }
 
+    // ----------------------------------------------------------------------------
+    // 2. GOOGLE DRIVE API v3 FOLDER SCANNER & NON-INTERRUPTIVE SYNC
+    // ----------------------------------------------------------------------------
     async function fetchGoogleDriveFolderSongs(folderId, apiKey, autoPlayFirst = false, isManualRefresh = false) {
       state.isLoadingFolder = true;
       state.folderError = '';
       updateHeaderRefreshState();
-      if (isManualRefresh) renderCurrentTab();
+      renderCurrentTab();
 
       try {
         const cb = Date.now();
-        let folderName = state.driveConfig?.folderName || 'Google Drive Folder';
-        try {
-          const metaRes = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}?fields=name&key=${encodeURIComponent(apiKey)}&_cb=${cb}`);
-          if (metaRes.ok) {
-            const meta = await metaRes.json();
-            if (meta && meta.name) folderName = meta.name;
-          }
-        } catch (e) {}
+        const metaUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}?fields=id,name&key=${encodeURIComponent(apiKey)}&_cb=${cb}`;
+        const metaRes = await fetch(metaUrl, { cache: 'no-store' });
+        let folderName = (state.driveConfig && state.driveConfig.folderName) || 'Google Drive Folder';
+        if (metaRes.ok) {
+          const metaJson = await metaRes.json();
+          if (metaJson && metaJson.name) folderName = metaJson.name;
+        }
 
-        const query = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
+        const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
         const fields = encodeURIComponent('files(id,name,mimeType,size)');
-        const url = `https://www.googleapis.com/drive/v3/files?q=${query}&fields=${fields}&orderBy=name&pageSize=200&key=${encodeURIComponent(apiKey)}&_cb=${cb}`;
+        const listUrl = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&orderBy=name&pageSize=200&key=${encodeURIComponent(apiKey)}&_cb=${cb}`;
 
-        const res = await fetch(url);
+        const res = await fetch(listUrl, { cache: 'no-store' });
         const data = await res.json();
 
-        if (!res.ok || data.error) {
-          throw new Error(data.error?.message || 'Unable to read Google Drive folder. Check Folder sharing ("Anyone with the link") and API Key.');
+        if (!res.ok) {
+          throw new Error((data.error && data.error.message) || `Google Drive API error (${res.status})`);
         }
 
         const audioExts = /\.(mp3|m4a|wav|flac|ogg|aac)$/i;
-        const audioFiles = (data.files || []).filter(f =>
-          (f.mimeType && f.mimeType.startsWith('audio/')) || audioExts.test(f.name)
+        const files = (data.files || []).filter(f =>
+          (f.mimeType && f.mimeType.startsWith('audio/')) || audioExts.test(f.name || '')
         );
 
-        if (!audioFiles.length) {
-          throw new Error('No audio files (.mp3, .m4a, .wav, .flac, .ogg, .aac) were found inside this Google Drive folder.');
+        if (!files.length) {
+          throw new Error('No audio files (.mp3, .m4a, .wav, .flac, .ogg, .aac) were found in this folder.');
         }
 
-        const prevActiveId = currentTrack()?.id || savedSession?.trackId || null;
+        const prevActive = currentTrack();
+        const prevActiveId = prevActive ? prevActive.id : (savedSession && savedSession.trackId);
 
-        state.driveConfig = { folderId, apiKey, folderName };
-        state.contextLabel = folderName;
-        state.tracks = audioFiles.map((file, idx) => {
+        const newTracks = files.map((file, idx) => {
           const palette = COVER_PALETTES[idx % COVER_PALETTES.length];
-          const cleanTitle = file.name.replace(/\.[^/.]+$/, '');
-          const extMatch = file.name.match(/\.([a-zA-Z0-9]+)$/);
+          const cleanTitle = (file.name || `Track ${idx + 1}`).replace(/\.[^/.]+$/, '');
+          const extMatch = (file.name || '').match(/\.([a-zA-Z0-9]+)$/);
+          const format = extMatch ? extMatch[1].toUpperCase() : 'MP3';
+
           return {
             id: `gdrive-${file.id}`,
             driveFileId: file.id,
             title: cleanTitle,
             artist: folderName,
-            format: extMatch ? extMatch[1].toUpperCase() : 'MP3',
+            format,
             mimeType: file.mimeType || 'audio/mpeg',
+            streamUrl: `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(file.id)}?alt=media&key=${encodeURIComponent(apiKey)}`,
+            fallbackUrl: `https://drive.usercontent.google.com/download?id=${encodeURIComponent(file.id)}&export=download&confirm=t`,
             colors: palette.colors,
-            artType: palette.artType
+            artType: palette.artType,
+            duration: 0
           };
         });
 
-        const newIds = state.tracks.map(t => t.id);
-        state.queue = state.shuffle ? [...newIds].sort(() => Math.random() - 0.5) : newIds;
+        state.driveConfig = { folderId, apiKey, folderName };
+        state.contextLabel = folderName;
+        state.tracks = newTracks;
+        state.queue = newTracks.map(t => t.id);
 
         const preservedIdx = prevActiveId ? state.queue.indexOf(prevActiveId) : -1;
         state.currentTrackIndex = preservedIdx >= 0 ? preservedIdx : 0;
@@ -821,27 +920,21 @@
         state.isLoadingFolder = false;
         updateHeaderRefreshState();
         updatePlayerUI();
-
-        if (autoPlayFirst && state.queue.length) {
-          playTrackById(state.queue[0], folderName, state.queue);
-          switchTab('listen');
-        } else {
-          renderCurrentTab();
-          if (state.queue.length) {
-            preloadTrackBlob(state.tracks.find(t => t.id === state.queue[state.currentTrackIndex]));
-            preloadNextTrackBlob();
-          }
-        }
+        renderCurrentTab();
 
         if (isManualRefresh) {
-          showToast(`Synced ${state.tracks.length} songs from Drive`);
+          showToast(`Synced ${newTracks.length} songs from Google Drive`);
+        } else if (autoPlayFirst && newTracks.length) {
+          playTrackById(newTracks[0].id, folderName, state.queue);
+        } else if (newTracks.length) {
+          preloadNextTrackBlob();
         }
       } catch (err) {
         state.isLoadingFolder = false;
-        state.folderError = err.message || 'Failed to load Google Drive folder.';
+        state.folderError = err.message || 'Could not load Google Drive folder.';
         updateHeaderRefreshState();
         renderCurrentTab();
-        showToast('Drive Sync Error');
+        showToast('Google Drive sync failed');
       }
     }
 
@@ -850,12 +943,18 @@
       const rawFolder = document.getElementById('gdrive-folder-input').value;
       const apiKey = document.getElementById('gdrive-apikey-input').value.trim();
       const folderId = extractDriveFolderId(rawFolder);
-      if (!folderId || !apiKey) return;
+
+      if (!folderId) {
+        state.folderError = 'Please enter a valid Google Drive Folder URL or Folder ID.';
+        renderCurrentTab();
+        return;
+      }
+
       fetchGoogleDriveFolderSongs(folderId, apiKey, true, false);
     }
 
     function rescanDriveFolder() {
-      if (!state.driveConfig || state.isLoadingFolder) return;
+      if (!state.driveConfig || !state.driveConfig.folderId || !state.driveConfig.apiKey || state.isLoadingFolder) return;
       fetchGoogleDriveFolderSongs(state.driveConfig.folderId, state.driveConfig.apiKey, false, true);
     }
 
@@ -865,7 +964,6 @@
       htmlAudio.load();
       blobCache.forEach(url => URL.revokeObjectURL(url));
       blobCache.clear();
-      pendingFetches.clear();
 
       state.driveConfig = null;
       state.tracks = [];
@@ -875,33 +973,48 @@
       state.currentTime = 0;
       state.folderError = '';
       saveUserData();
-      savePlaybackSession();
+      closeNowPlaying();
       updateHeaderRefreshState();
       updatePlayerUI();
-      closeNowPlaying();
       renderCurrentTab();
-      showToast('Google Drive Folder Unlinked');
+      showToast('Google Drive folder unlinked');
     }
 
     // ----------------------------------------------------------------------------
     // 3. LONG-TERM iOS BACKGROUND AUDIO ENGINE & ROLLING BLOB CACHE
     // ----------------------------------------------------------------------------
-    function getDirectDriveMediaUrl(track) {
-      if (!track || !state.driveConfig) return '';
-      return `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(track.driveFileId)}?alt=media&key=${encodeURIComponent(state.driveConfig.apiKey)}`;
+    const htmlAudio = document.getElementById('ios-bg-audio');
+    htmlAudio.volume = state.volume;
+
+    const blobCache = new Map();
+    const blobInFlight = new Map();
+    let audioCtx = null;
+    let keepAliveOsc = null;
+    let lastProgressTick = 0;
+
+    function ensureAudioSessionAnchor() {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!audioCtx) audioCtx = new AudioContextClass();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        if (!keepAliveOsc) {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.frequency.value = 30;
+          gain.gain.value = 0.00001;
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          keepAliveOsc = osc;
+        }
+      } catch (e) {}
     }
 
-    function pruneOldTrackBlobs() {
-      if (blobCache.size <= 3) return;
-      const keepIds = new Set();
-      const cur = currentTrack();
-      if (cur) keepIds.add(cur.id);
-      if (state.queue.length > 1) {
-        const nextIdx = (state.currentTrackIndex + 1) % state.queue.length;
-        keepIds.add(state.queue[nextIdx]);
-      }
+    function pruneOldTrackBlobs(keepIds) {
+      const keepSet = new Set(keepIds.filter(Boolean));
       for (const [id, url] of blobCache.entries()) {
-        if (!keepIds.has(id)) {
+        if (!keepSet.has(id)) {
           URL.revokeObjectURL(url);
           blobCache.delete(id);
         }
@@ -909,154 +1022,195 @@
     }
 
     async function fetchTrackBlobUrl(track) {
-      if (!track || !state.driveConfig) return null;
+      if (!track) return null;
       if (blobCache.has(track.id)) return blobCache.get(track.id);
-      if (pendingFetches.has(track.id)) return pendingFetches.get(track.id);
+      if (blobInFlight.has(track.id)) return blobInFlight.get(track.id);
 
       const promise = (async () => {
         try {
-          const mediaUrl = getDirectDriveMediaUrl(track);
-          const res = await fetch(mediaUrl);
+          const res = await fetch(track.streamUrl);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const buf = await res.arrayBuffer();
-          const blob = new Blob([buf], { type: track.mimeType || 'audio/mpeg' });
-          const objUrl = URL.createObjectURL(blob);
-          blobCache.set(track.id, objUrl);
-          pruneOldTrackBlobs();
-          return objUrl;
+          const typedBlob = new Blob([buf], { type: track.mimeType || 'audio/mpeg' });
+          const url = URL.createObjectURL(typedBlob);
+          blobCache.set(track.id, url);
+          return url;
         } catch (err) {
           return null;
         } finally {
-          pendingFetches.delete(track.id);
+          blobInFlight.delete(track.id);
         }
       })();
 
-      pendingFetches.set(track.id, promise);
+      blobInFlight.set(track.id, promise);
       return promise;
     }
 
-    function preloadTrackBlob(track) {
-      if (track) fetchTrackBlobUrl(track);
+    function getNextQueueIndex() {
+      if (!state.queue.length) return -1;
+      if (state.shuffle && state.queue.length > 1) {
+        let nextIdx = state.currentTrackIndex;
+        while (nextIdx === state.currentTrackIndex) {
+          nextIdx = Math.floor(Math.random() * state.queue.length);
+        }
+        return nextIdx;
+      }
+      if (state.currentTrackIndex + 1 < state.queue.length) {
+        return state.currentTrackIndex + 1;
+      }
+      return state.repeat === 'all' ? 0 : -1;
     }
 
     function preloadNextTrackBlob() {
-      if (!state.queue.length) return;
-      const nextIdx = (state.currentTrackIndex + 1) % state.queue.length;
-      const nextTrackObj = state.tracks.find(t => t.id === state.queue[nextIdx]);
-      if (nextTrackObj) preloadTrackBlob(nextTrackObj);
+      const cur = currentTrack();
+      const nextIdx = getNextQueueIndex();
+      const nextId = nextIdx >= 0 ? state.queue[nextIdx] : null;
+      const nextTr = nextId ? state.tracks.find(t => t.id === nextId) : null;
+      pruneOldTrackBlobs([cur && cur.id, nextTr && nextTr.id]);
+      if (nextTr) fetchTrackBlobUrl(nextTr);
     }
 
-    function updateMediaSessionMetadata(track) {
-      if (!('mediaSession' in navigator) || !track) return;
+    function generateLockScreenArtworkDataUrl(track) {
       try {
         const canvas = document.createElement('canvas');
         canvas.width = 512;
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
-        const [c1, c2, c3] = track.colors || ['#fa2d48', '#8e44ad', '#141418'];
+        const [c1, c2, c3] = (track && track.colors) || ['#fa2d48', '#8e44ad', '#141418'];
         const grad = ctx.createLinearGradient(0, 0, 512, 512);
         grad.addColorStop(0, c1);
         grad.addColorStop(0.55, c2);
         grad.addColorStop(1, c3);
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 512, 512);
-        ctx.fillStyle = 'rgba(255,255,255,0.88)';
+
+        ctx.fillStyle = 'rgba(255,255,255,0.22)';
         ctx.beginPath();
-        ctx.arc(256, 256, 110, 0, Math.PI * 2);
+        ctx.arc(256, 256, 150, 0, Math.PI * 2);
         ctx.fill();
 
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 42px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText((track.title || 'Aura Music').slice(0, 18), 256, 268);
+        return canvas.toDataURL('image/png');
+      } catch (e) {
+        return '';
+      }
+    }
+
+    function updateMediaSession(track) {
+      if (!('mediaSession' in navigator) || !track) return;
+      try {
+        const artUrl = generateLockScreenArtworkDataUrl(track);
         navigator.mediaSession.metadata = new MediaMetadata({
           title: track.title,
           artist: track.artist,
           album: state.contextLabel,
-          artwork: [{ src: canvas.toDataURL('image/png'), sizes: '512x512', type: 'image/png' }]
+          artwork: artUrl ? [{ src: artUrl, sizes: '512x512', type: 'image/png' }] : []
         });
         navigator.mediaSession.setActionHandler('play', () => togglePlayPause());
         navigator.mediaSession.setActionHandler('pause', () => togglePlayPause());
         navigator.mediaSession.setActionHandler('previoustrack', () => prevTrack());
         navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack());
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+          if (details.seekTime != null && isFinite(htmlAudio.duration)) {
+            htmlAudio.currentTime = details.seekTime;
+            state.currentTime = details.seekTime;
+            updateTimeUI();
+          }
+        });
       } catch (e) {}
     }
 
-    async function playTrackById(trackId, contextName = null, newQueueIds = null) {
-      if (newQueueIds && Array.isArray(newQueueIds) && newQueueIds.length) {
-        state.queue = [...newQueueIds];
+    async function playTrackById(id, contextLabel = null, queueIds = null) {
+      if (Array.isArray(queueIds) && queueIds.length) {
+        state.queue = queueIds.slice();
       }
-      if (contextName) state.contextLabel = contextName;
+      if (contextLabel) {
+        state.contextLabel = contextLabel;
+      }
 
-      const idx = state.queue.indexOf(trackId);
-      if (idx >= 0) state.currentTrackIndex = idx;
+      const idx = state.queue.indexOf(id);
+      if (idx >= 0) {
+        state.currentTrackIndex = idx;
+      } else {
+        const fallbackIdx = state.tracks.findIndex(t => t.id === id);
+        if (fallbackIdx >= 0) {
+          state.queue = state.tracks.map(t => t.id);
+          state.currentTrackIndex = fallbackIdx;
+        }
+      }
 
       const track = currentTrack();
       if (!track) return;
 
+      ensureAudioSessionAnchor();
       state.currentTime = 0;
       state.isPlaying = true;
       updatePlayerUI();
       renderCurrentTab();
-      updateMediaSessionMetadata(track);
+      updateMediaSession(track);
+
+      const badge = document.getElementById('np-audio-badge');
+      if (badge) badge.textContent = 'Buffering Google Drive...';
 
       const cachedUrl = blobCache.get(track.id);
-      const primarySrc = cachedUrl || getDirectDriveMediaUrl(track);
-      document.getElementById('np-audio-badge').textContent = cachedUrl
-        ? `Google Drive • ${track.format}`
-        : `Buffering • ${track.format}`;
-
-      htmlAudio.src = primarySrc;
+      htmlAudio.src = cachedUrl || track.streamUrl;
       htmlAudio.load();
 
       try {
         await htmlAudio.play();
-        document.getElementById('np-audio-badge').textContent = `Google Drive • ${track.format}`;
+        lastProgressTick = Date.now();
         preloadNextTrackBlob();
-        savePlaybackSession();
       } catch (err) {
-        // Fallback to typed Blob fetch if direct URL stream was rejected by iOS Safari
         const blobUrl = await fetchTrackBlobUrl(track);
-        if (blobUrl && currentTrack()?.id === track.id) {
+        if (blobUrl) {
           htmlAudio.src = blobUrl;
           htmlAudio.load();
           try {
             await htmlAudio.play();
-            document.getElementById('np-audio-badge').textContent = `Google Drive • ${track.format}`;
+            lastProgressTick = Date.now();
             preloadNextTrackBlob();
-            savePlaybackSession();
-          } catch (e2) {
-            state.isPlaying = false;
-            updatePlayerUI();
-            showToast('Tap Play to start audio on iOS');
-          }
-        } else {
-          state.isPlaying = false;
-          updatePlayerUI();
+            return;
+          } catch (e2) {}
         }
+        if (track.fallbackUrl && htmlAudio.src !== track.fallbackUrl) {
+          htmlAudio.src = track.fallbackUrl;
+          htmlAudio.load();
+          try {
+            await htmlAudio.play();
+            lastProgressTick = Date.now();
+            preloadNextTrackBlob();
+            return;
+          } catch (e3) {}
+        }
+        state.isPlaying = false;
+        updatePlayerUI();
+        renderCurrentTab();
+        showToast('Tap Play to start audio stream');
       }
     }
 
     function togglePlayPause() {
       const track = currentTrack();
-      if (!track) {
-        if (state.tracks.length) {
-          playTrackById(state.tracks[0].id);
-        } else {
-          switchTab('settings');
-        }
-        return;
-      }
+      if (!track) return;
+      ensureAudioSessionAnchor();
 
       if (state.isPlaying) {
         htmlAudio.pause();
         state.isPlaying = false;
+        savePlaybackSession();
         updatePlayerUI();
         renderCurrentTab();
-        savePlaybackSession();
       } else {
-        if (!htmlAudio.src || htmlAudio.src === window.location.href) {
+        if (!htmlAudio.src) {
           playTrackById(track.id);
           return;
         }
         htmlAudio.play().then(() => {
           state.isPlaying = true;
+          lastProgressTick = Date.now();
           updatePlayerUI();
           renderCurrentTab();
         }).catch(() => {
@@ -1072,18 +1226,19 @@
         htmlAudio.play().catch(() => {});
         return;
       }
-      const nextIdx = (state.currentTrackIndex + 1) % state.queue.length;
-      if (nextIdx === 0 && state.repeat === 'off') {
+      const nextIdx = getNextQueueIndex();
+      if (nextIdx >= 0) {
+        playTrackById(state.queue[nextIdx]);
+      } else {
         state.isPlaying = false;
         updatePlayerUI();
-        return;
+        renderCurrentTab();
       }
-      playTrackById(state.queue[nextIdx]);
     }
 
     function prevTrack() {
       if (!state.queue.length) return;
-      if (htmlAudio.currentTime > 4) {
+      if (htmlAudio.currentTime > 3) {
         htmlAudio.currentTime = 0;
         state.currentTime = 0;
         updateTimeUI();
@@ -1095,83 +1250,69 @@
 
     function toggleShuffle() {
       state.shuffle = !state.shuffle;
-      const curId = currentTrack()?.id;
-      const allIds = state.tracks.map(t => t.id);
-      if (state.shuffle) {
-        const others = allIds.filter(id => id !== curId).sort(() => Math.random() - 0.5);
-        state.queue = curId ? [curId, ...others] : others;
-        state.currentTrackIndex = 0;
-      } else {
-        state.queue = allIds;
-        state.currentTrackIndex = curId ? Math.max(0, allIds.indexOf(curId)) : 0;
-      }
       savePlaybackSession();
       updatePlayerUI();
+      preloadNextTrackBlob();
       showToast(state.shuffle ? 'Shuffle On' : 'Shuffle Off');
     }
 
     function cycleRepeat() {
-      const order = ['all', 'one', 'off'];
+      const order = ['off', 'all', 'one'];
       state.repeat = order[(order.indexOf(state.repeat) + 1) % order.length];
       savePlaybackSession();
       updatePlayerUI();
-      const labels = { all: 'Repeat Folder', one: 'Repeat One', off: 'Repeat Off' };
+      const labels = { off: 'Repeat Off', all: 'Repeat Folder', one: 'Repeat One' };
       showToast(labels[state.repeat]);
     }
 
     async function toggleWakeLock() {
       const label = document.getElementById('wake-lock-label');
-      const btn = document.getElementById('btn-wake-lock');
-      if (state.wakeLock) {
-        try { await state.wakeLock.release(); } catch (e) {}
-        state.wakeLock = null;
-        if (label) label.textContent = 'Awake: Off';
-        if (btn) btn.classList.remove('bg-white/20', 'text-white');
-        showToast('Screen Wake Lock Off');
+      if (!('wakeLock' in navigator)) {
+        showToast('Screen Wake Lock unavailable on this browser');
         return;
       }
-      if ('wakeLock' in navigator) {
-        try {
+      try {
+        if (state.wakeLock) {
+          await state.wakeLock.release();
+          state.wakeLock = null;
+          if (label) label.textContent = 'Awake: Off';
+          showToast('Screen Wake Lock Off');
+        } else {
           state.wakeLock = await navigator.wakeLock.request('screen');
           if (label) label.textContent = 'Awake: On';
-          if (btn) btn.classList.add('bg-white/20', 'text-white');
-          showToast('Screen Kept Awake');
-          state.wakeLock.addEventListener('release', () => {
-            state.wakeLock = null;
-            if (label) label.textContent = 'Awake: Off';
-            if (btn) btn.classList.remove('bg-white/20', 'text-white');
-          });
-        } catch (e) {
-          showToast('Wake Lock unavailable');
+          showToast('Screen will stay awake');
         }
-      } else {
-        showToast('Wake Lock not supported');
+      } catch (e) {
+        showToast('Could not toggle Screen Wake Lock');
       }
     }
 
-    // Native HTML5 Audio Event Listeners for Background Continuity
     htmlAudio.addEventListener('timeupdate', () => {
       state.currentTime = htmlAudio.currentTime || 0;
+      lastProgressTick = Date.now();
       updateTimeUI();
       if (Math.floor(state.currentTime) % 5 === 0) savePlaybackSession();
     });
 
     htmlAudio.addEventListener('loadedmetadata', () => {
       const tr = currentTrack();
-      if (tr) {
-        document.getElementById('np-audio-badge').textContent = `Google Drive • ${tr.format}`;
+      if (tr && isFinite(htmlAudio.duration)) {
+        tr.duration = htmlAudio.duration;
       }
       updateTimeUI();
     });
 
     htmlAudio.addEventListener('play', () => {
       state.isPlaying = true;
+      lastProgressTick = Date.now();
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
       updatePlayerUI();
       renderCurrentTab();
     });
 
     htmlAudio.addEventListener('pause', () => {
       state.isPlaying = false;
+      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
       updatePlayerUI();
       renderCurrentTab();
     });
@@ -1180,16 +1321,31 @@
       nextTrack();
     });
 
+    setInterval(() => {
+      if (state.isPlaying && !htmlAudio.paused && Date.now() - lastProgressTick > 6500) {
+        const cur = htmlAudio.currentTime;
+        htmlAudio.currentTime = cur + 0.01;
+        htmlAudio.play().catch(() => {});
+      }
+    }, 3000);
+
     window.addEventListener('online', () => {
-      if (state.isPlaying && htmlAudio.paused && currentTrack()) {
+      if (state.isPlaying && htmlAudio.paused) {
         htmlAudio.play().catch(() => {});
       }
     });
 
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        state.currentTime = htmlAudio.currentTime || state.currentTime;
+        updatePlayerUI();
+      }
+    });
+
     // ----------------------------------------------------------------------------
-    // 5. LIVE AUDIO VISUALIZER (CENTER-MIRRORED FLUID RHYTHM SPECTRUM)
+    // 5. VINYL TURNTABLE RHYTHM RING ANIMATION
     // ----------------------------------------------------------------------------
-    let smoothedBars = new Array(36).fill(4);
+    let smoothedRingBars = new Array(64).fill(3);
 
     function startVisualizerLoop() {
       const canvas = document.getElementById('visualizer-canvas');
@@ -1200,69 +1356,56 @@
 
         const dpr = window.devicePixelRatio || 1;
         const rect = canvas.getBoundingClientRect();
-        const targetW = Math.round((rect.width || 310) * dpr);
-        const targetH = Math.round((rect.height || 48) * dpr);
-        if (canvas.width !== targetW || canvas.height !== targetH) {
-          canvas.width = targetW;
-          canvas.height = targetH;
+        const size = Math.min(rect.width || 310, rect.height || 310);
+        const targetS = Math.round(size * dpr);
+        if (canvas.width !== targetS || canvas.height !== targetS) {
+          canvas.width = targetS;
+          canvas.height = targetS;
         }
 
         ctx.save();
         ctx.scale(dpr, dpr);
-        const width = rect.width || 310;
-        const height = rect.height || 48;
-        ctx.clearRect(0, 0, width, height);
+        ctx.clearRect(0, 0, size, size);
 
-        const bars = 36;
-        const half = bars / 2;
-        const step = width / bars;
-        const barWidth = Math.max(2.5, step * 0.48);
+        const cx = size / 2;
+        const cy = size / 2;
+        const baseRadius = size * 0.425;
+        const bars = 64;
         const now = performance.now() * 0.001;
         const track = currentTrack();
         const [c1, c2] = (track && track.colors) || ['#fa2d48', '#ff6b81'];
 
-        // Symmetric gradient across the rhythm waveform
-        const grad = ctx.createLinearGradient(0, 0, width, 0);
-        grad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
-        grad.addColorStop(0.28, c1);
-        grad.addColorStop(0.5, '#ffffff');
-        grad.addColorStop(0.72, c2);
-        grad.addColorStop(1, 'rgba(255, 255, 255, 0.45)');
-
         for (let i = 0; i < bars; i++) {
-          // Mirror distance from center (0 = center peak, 1 = outer edge)
-          const distFromCenter = Math.abs(i - (half - 0.5)) / half;
-          const envelope = Math.pow(1 - distFromCenter * 0.72, 1.35);
+          const angle = (i / bars) * Math.PI * 2 - Math.PI / 2;
+          let targetLen = 3;
 
-          let targetHeight = 4;
           if (state.isPlaying) {
-            // Multi-layered rhythmic beat & harmonic wave
-            const beatPulse = Math.pow(Math.abs(Math.sin(now * 3.8)), 3.2) * 0.55 + 0.45;
-            const subBass = Math.sin(now * 7.6 - distFromCenter * 4.2) * 0.5 + 0.5;
-            const midHarmonic = Math.cos(now * 11.4 + distFromCenter * 8.5) * 0.5 + 0.5;
-            const trebleRipple = Math.sin(now * 16.2 - i * 0.65) * 0.5 + 0.5;
-
-            const energy = (subBass * 0.5 + midHarmonic * 0.32 + trebleRipple * 0.18) * beatPulse;
-            targetHeight = 5 + energy * envelope * (height - 8);
+            const beat = Math.pow(Math.abs(Math.sin(now * 3.6)), 3) * 0.55 + 0.45;
+            const waveA = Math.sin(angle * 4 + now * 5.2) * 0.5 + 0.5;
+            const waveB = Math.cos(angle * 7 - now * 8.4) * 0.5 + 0.5;
+            const energy = (waveA * 0.6 + waveB * 0.4) * beat;
+            targetLen = 4 + energy * (size * 0.065);
           }
 
-          // Smooth spring interpolation for fluid motion
-          smoothedBars[i] += (targetHeight - smoothedBars[i]) * (state.isPlaying ? 0.24 : 0.12);
-          const barHeight = Math.max(3.5, smoothedBars[i]);
-          const x = i * step + (step - barWidth) / 2;
-          const y = (height - barHeight) / 2;
+          smoothedRingBars[i] += (targetLen - smoothedRingBars[i]) * (state.isPlaying ? 0.24 : 0.12);
+          const len = smoothedRingBars[i];
 
-          ctx.fillStyle = state.isPlaying ? grad : 'rgba(255, 255, 255, 0.22)';
-          if (state.isPlaying && distFromCenter < 0.45) {
-            ctx.shadowColor = c1;
-            ctx.shadowBlur = 8;
-          } else {
-            ctx.shadowBlur = 0;
-          }
+          const x1 = cx + Math.cos(angle) * baseRadius;
+          const y1 = cy + Math.sin(angle) * baseRadius;
+          const x2 = cx + Math.cos(angle) * (baseRadius + len);
+          const y2 = cy + Math.sin(angle) * (baseRadius + len);
+
+          ctx.strokeStyle = state.isPlaying
+            ? (i % 2 === 0 ? c1 : c2)
+            : 'rgba(255, 255, 255, 0.16)';
+          ctx.globalAlpha = state.isPlaying ? 0.78 : 0.35;
+          ctx.lineWidth = 2.4;
+          ctx.lineCap = 'round';
 
           ctx.beginPath();
-          ctx.roundRect(x, y, barWidth, barHeight, barWidth / 2);
-          ctx.fill();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
         }
 
         ctx.restore();
@@ -1773,13 +1916,15 @@
         document.getElementById('np-audio-badge').textContent = `Google Drive • ${track.format}`;
       }
 
-      const artWrap = document.getElementById('np-art-wrapper');
-      if (state.isPlaying) {
-        artWrap.classList.remove('scale-90');
-        artWrap.classList.add('scale-100');
-      } else {
-        artWrap.classList.remove('scale-100');
-        artWrap.classList.add('scale-90');
+      const vinylDisc = document.getElementById('vinyl-disc');
+      const vinylTonearm = document.getElementById('vinyl-tonearm');
+      const vinylStatus = document.getElementById('vinyl-status-label');
+      if (vinylDisc) vinylDisc.classList.toggle('is-spinning', state.isPlaying);
+      if (vinylTonearm) vinylTonearm.classList.toggle('is-playing', state.isPlaying);
+      if (vinylStatus) {
+        vinylStatus.textContent = state.isPlaying
+          ? '33⅓ RPM • Spinning Vinyl'
+          : '33⅓ RPM • Vinyl Paused';
       }
 
       const [c1, c2, c3] = track.colors || ['#0a84ff', '#5e5ce6', '#141418'];
