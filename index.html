@@ -229,12 +229,12 @@
     }
 
     .tonearm-pivot {
-      transform-origin: 24px 24px;
+      transform-origin: 84px 24px;
       transition: transform 0.75s cubic-bezier(0.34, 1.36, 0.64, 1);
-      transform: rotate(-28deg);
+      transform: rotate(-34deg);
     }
     .tonearm-pivot.is-playing {
-      transform: rotate(3deg);
+      transform: rotate(-11deg);
     }
   </style>
 </head>
@@ -349,7 +349,7 @@
     <!-- ========================================================= -->
     <!-- FULL-SCREEN iOS "NOW PLAYING" SHEET                       -->
     <!-- ========================================================= -->
-    <div id="now-playing-sheet" class="now-playing-sheet fixed inset-0 z-50 max-w-2xl mx-auto translate-y-full flex flex-col overflow-hidden bg-zinc-950 text-white">
+    <div id="now-playing-sheet" class="now-playing-sheet fixed inset-0 h-[100dvh] z-50 max-w-2xl mx-auto translate-y-full flex flex-col overflow-hidden bg-zinc-950 text-white">
       
       <!-- Dynamic Ambient Album Art Blur Background -->
       <div id="np-ambient-bg" class="absolute inset-0 pointer-events-none overflow-hidden transition-colors duration-1000">
@@ -500,24 +500,24 @@
           </div>
 
           <!-- Bottom Utility Row: Lyrics, AirPlay, Queue -->
-          <div class="flex items-center justify-around pt-1">
-            <button onclick="toggleNpMode('lyrics')" id="btn-mode-lyrics" class="px-3.5 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1.5 text-xs font-semibold transition">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/></svg>
+          <div class="flex items-center justify-between gap-1 pt-1">
+            <button onclick="toggleNpMode('lyrics')" id="btn-mode-lyrics" class="px-2.5 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap transition">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/></svg>
               <span>Lyrics</span>
             </button>
 
-            <button onclick="toggleWakeLock()" id="btn-wake-lock" class="px-3.5 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1.5 text-xs font-semibold transition" title="Keep Screen Awake">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2"/></svg>
-              <span id="wake-lock-label">Awake: Off</span>
+            <button onclick="toggleWakeLock()" id="btn-wake-lock" class="px-2.5 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap transition" title="Keep Screen Awake">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2"/></svg>
+              <span id="wake-lock-label">Awake</span>
             </button>
 
-            <button onclick="openAirplayModal()" class="px-3.5 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1.5 text-xs font-semibold transition">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="12 15 17 21 7 21 12 15" fill="currentColor"/></svg>
+            <button onclick="openAirplayModal()" class="px-2.5 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap transition">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="12 15 17 21 7 21 12 15" fill="currentColor"/></svg>
               <span id="airplay-label">iPhone</span>
             </button>
 
-            <button onclick="toggleNpMode('queue')" id="btn-mode-queue" class="px-3.5 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1.5 text-xs font-semibold transition">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <button onclick="toggleNpMode('queue')" id="btn-mode-queue" class="px-2.5 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap transition">
+              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
               <span>Queue</span>
             </button>
           </div>
@@ -1363,6 +1363,7 @@
 
     async function toggleWakeLock() {
       const label = document.getElementById('wake-lock-label');
+      const btn = document.getElementById('btn-wake-lock');
       if (!('wakeLock' in navigator)) {
         showToast('Screen Wake Lock not supported on this iOS version');
         return;
@@ -1371,13 +1372,15 @@
         try { await state.wakeLock.release(); } catch (e) {}
         state.wakeLock = null;
         state.wakeLockDesired = false;
-        if (label) label.textContent = 'Awake: Off';
+        if (label) label.textContent = 'Awake';
+        if (btn) btn.classList.remove('text-[#fa2d48]', 'bg-white/15');
         showToast('Screen Auto-Lock Enabled');
       } else {
         try {
           state.wakeLock = await navigator.wakeLock.request('screen');
           state.wakeLockDesired = true;
-          if (label) label.textContent = 'Awake: On';
+          if (label) label.textContent = 'Awake On';
+          if (btn) btn.classList.add('text-[#fa2d48]', 'bg-white/15');
           showToast('Screen Kept Awake');
         } catch (e) {
           showToast('Unable to enable Wake Lock');
