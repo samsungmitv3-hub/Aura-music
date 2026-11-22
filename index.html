@@ -223,9 +223,10 @@
           <span class="hidden dark:inline text-amber-300" id="icon-sun"></span>
           <span class="inline dark:hidden text-zinc-700" id="icon-moon"></span>
         </button>
-        <!-- Profile / iOS Guide Button -->
-        <button onclick="openPwaGuideModal()" class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fa2d48] to-[#ff6b81] text-white font-bold text-xs flex items-center justify-center shadow-md active:scale-90 transition" title="App Info & iOS PWA Guide">
-          AM
+        <!-- Settings Button -->
+        <button onclick="openSettingsView()" id="header-settings-btn" class="w-9 h-9 rounded-full liquid-pill-btn flex items-center justify-center text-zinc-700 dark:text-white relative" title="Settings & Google Drive Source">
+          <span id="icon-header-settings"></span>
+          <span id="settings-linked-dot" class="hidden absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-white dark:ring-black"></span>
         </button>
       </div>
     </header>
@@ -644,6 +645,7 @@
       heartOutline: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
       heartFilled: `<svg class="w-4 h-4 text-[#fa2d48]" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
       drive: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M7.71 3.5L1.15 15l3.43 6 6.55-11.5L7.71 3.5zm1.72 0l6.56 11.5h6.86L16.29 3.5H9.43zm5.42 12.5H2.58l-1.43 2.5 2.28 2.5h15.14l2.28-2.5-1.43-2.5h-4.57z"/></svg>`,
+      settings: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
       link: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
       unlink: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18.84 12.25l1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`,
       refresh: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
@@ -898,13 +900,16 @@
     function updateHeaderRefreshState() {
       const btn = document.getElementById('header-refresh-btn');
       const iconWrap = document.getElementById('icon-header-refresh');
+      const linkedDot = document.getElementById('settings-linked-dot');
       if (!btn || !iconWrap) return;
       if (state.driveConfig) {
         btn.classList.remove('hidden');
         iconWrap.classList.toggle('animate-spin', state.isLoadingFolder);
+        if (linkedDot) linkedDot.classList.remove('hidden');
       } else {
         btn.classList.add('hidden');
         iconWrap.classList.remove('animate-spin');
+        if (linkedDot) linkedDot.classList.add('hidden');
       }
     }
 
@@ -1553,14 +1558,29 @@
         btn.classList.toggle('dark:text-white/60', !isTarget);
       });
 
+      const settingsBtn = document.getElementById('header-settings-btn');
+      if (settingsBtn) {
+        settingsBtn.classList.toggle('text-[#fa2d48]', tab === 'settings');
+        settingsBtn.classList.toggle('dark:text-[#fa2d48]', tab === 'settings');
+      }
+
       const titles = {
         listen: 'Listen Now',
         library: 'Library',
-        search: 'Search'
+        search: 'Search',
+        settings: 'Settings'
       };
-      document.getElementById('header-title').textContent = titles[tab];
+      document.getElementById('header-title').textContent = titles[tab] || 'Listen Now';
       document.getElementById('main-scroll').scrollTo({ top: 0, behavior: 'smooth' });
       renderCurrentTab();
+    }
+
+    function openSettingsView() {
+      if (state.activeTab === 'settings') {
+        switchTab('listen');
+      } else {
+        switchTab('settings');
+      }
     }
 
     function renderCurrentTab() {
@@ -1568,6 +1588,27 @@
       if (state.activeTab === 'listen') renderListenNow(container);
       else if (state.activeTab === 'library') renderLibrary(container);
       else if (state.activeTab === 'search') renderSearch(container);
+      else if (state.activeTab === 'settings') renderSettings(container);
+    }
+
+    function renderEmptyDrivePrompt() {
+      return `
+        <section class="p-6 rounded-[26px] liquid-glass text-center space-y-4">
+          <div class="w-12 h-12 rounded-2xl bg-blue-500/15 text-blue-500 dark:text-blue-400 mx-auto flex items-center justify-center">
+            ${ICONS.drive}
+          </div>
+          <div class="space-y-1">
+            <h2 class="text-[18px] font-bold tracking-[-0.015em]">No Google Drive Folder Linked</h2>
+            <p class="text-xs text-zinc-500 dark:text-white/55 max-w-xs mx-auto leading-relaxed">
+              Connect your public Google Drive music folder in Settings to stream your songs here.
+            </p>
+          </div>
+          <button onclick="switchTab('settings')" class="px-5 py-2.5 rounded-full bg-[#fa2d48] text-white text-xs font-bold shadow-lg active:scale-95 transition inline-flex items-center gap-2">
+            ${ICONS.settings}
+            <span>Open Settings</span>
+          </button>
+        </section>
+      `;
     }
 
     function renderDriveSetupCard() {
@@ -1660,21 +1701,21 @@
                 <div class="absolute inset-0 bg-black/45 flex items-center justify-center">
                   <div class="flex items-end gap-[2.5px] h-4 ${state.isPlaying ? 'eq-playing' : ''}">
                     <span class="bar-1 w-[3px] bg-[#fa2d48] rounded-full h-2"></span>
-                    <span class="bar-2 w-[3px] bg-[#fa2d48] rounded-full h-4"></span>
-                    <span class="bar-3 w-[3px] bg-[#fa2d48] rounded-full h-3"></span>
-                    <span class="bar-4 w-[3px] bg-[#fa2d48] rounded-full h-2"></span>
+                    <span class="bar-2 w-[3px] bg-[#fa2d48] rounded-full h-3.5"></span>
+                    <span class="bar-3 w-[3px] bg-[#fa2d48] rounded-full h-2.5"></span>
+                    <span class="bar-4 w-[3px] bg-[#fa2d48] rounded-full h-4"></span>
                   </div>
                 </div>
               ` : ''}
             </div>
             <div class="min-w-0 flex-1">
-              <p class="text-[15px] font-semibold tracking-[-0.01em] truncate ${isCurrent ? 'text-[#fa2d48]' : 'text-zinc-900 dark:text-white'}">${track.title}</p>
-              <p class="text-[12px] text-zinc-500 dark:text-white/55 truncate mt-0.5">${track.artist} • ${track.format}</p>
+              <p class="text-[14px] font-semibold tracking-[-0.01em] truncate ${isCurrent ? 'text-[#fa2d48]' : 'text-zinc-900 dark:text-white'}">${track.title}</p>
+              <p class="text-xs text-zinc-500 dark:text-white/55 truncate mt-0.5">${track.artist} • <span class="uppercase font-semibold">${track.format}</span></p>
             </div>
           </div>
 
-          <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
-            <button onclick="toggleLikeTrack('${track.id}')" class="w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 hover:text-[#fa2d48] active:scale-90 transition" aria-label="Favorite">
+          <div class="flex items-center gap-2 shrink-0" onclick="event.stopPropagation()">
+            <button onclick="toggleLikeTrack('${track.id}')" class="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-[#fa2d48] active:scale-90 transition" aria-label="Favorite">
               ${isLiked ? ICONS.heartFilled : ICONS.heartOutline}
             </button>
           </div>
@@ -1682,12 +1723,10 @@
       `;
     }
 
-    // TAB 1: LISTEN NOW (GOOGLE DRIVE FOLDER ONLY)
+    // TAB 1: LISTEN NOW (GOOGLE DRIVE FOLDER SONGS ONLY)
     function renderListenNow(container) {
-      const setupHtml = renderDriveSetupCard();
-
       if (!state.tracks.length) {
-        container.innerHTML = setupHtml;
+        container.innerHTML = renderEmptyDrivePrompt();
         return;
       }
 
@@ -1695,14 +1734,12 @@
       const folderName = state.driveConfig?.folderName || 'Google Drive Folder';
 
       container.innerHTML = `
-        ${setupHtml}
-
         <!-- Google Drive Folder Songs List -->
         <section class="space-y-3">
           <div class="flex items-center justify-between">
             <div>
-              <h2 class="text-[19px] font-bold tracking-[-0.015em]">Folder Songs (${state.tracks.length})</h2>
-              <p class="text-xs text-zinc-500 dark:text-white/50">Tap any track to stream sequentially</p>
+              <h2 class="text-[19px] font-bold tracking-[-0.015em]">${folderName}</h2>
+              <p class="text-xs text-zinc-500 dark:text-white/50">${state.tracks.length} songs • Tap any track to stream</p>
             </div>
             <button onclick="playTrackById('${allIds[0]}', '${folderName.replace(/'/g, "\\'")}', ${JSON.stringify(allIds).replace(/"/g, '&quot;')})"
                     class="px-4 py-2 rounded-full bg-[#fa2d48] text-white text-xs font-bold shadow active:scale-95 transition flex items-center gap-1.5">
@@ -1721,7 +1758,7 @@
     // TAB 2: LIBRARY (GOOGLE DRIVE FOLDER & FAVORITES)
     function renderLibrary(container) {
       if (!state.tracks.length) {
-        container.innerHTML = renderDriveSetupCard();
+        container.innerHTML = renderEmptyDrivePrompt();
         return;
       }
 
@@ -1731,8 +1768,6 @@
       const folderName = state.driveConfig?.folderName || 'Google Drive Folder';
 
       container.innerHTML = `
-        ${renderDriveSetupCard()}
-
         <!-- Favorite Drive Songs -->
         <section class="space-y-2">
           <div class="flex items-center justify-between">
@@ -1768,7 +1803,7 @@
     // TAB 3: SEARCH (SEARCH GOOGLE DRIVE FOLDER SONGS ONLY)
     function renderSearch(container) {
       if (!state.tracks.length) {
-        container.innerHTML = renderDriveSetupCard();
+        container.innerHTML = renderEmptyDrivePrompt();
         return;
       }
 
@@ -1812,6 +1847,34 @@
         input.focus();
         input.setSelectionRange(input.value.length, input.value.length);
       }
+    }
+
+    // TAB 4: SETTINGS (GOOGLE DRIVE FOLDER CONNECTION & APP INFO)
+    function renderSettings(container) {
+      container.innerHTML = `
+        <div class="space-y-5">
+          <div class="flex items-center justify-between">
+            <p class="text-[11px] font-bold uppercase tracking-[0.08em] text-zinc-500 dark:text-white/50">Music Source</p>
+            <button onclick="switchTab('listen')" class="text-xs font-semibold text-[#fa2d48]">Done</button>
+          </div>
+
+          ${renderDriveSetupCard()}
+
+          <section class="p-5 rounded-[26px] liquid-glass space-y-3">
+            <h3 class="text-[15px] font-bold tracking-[-0.01em]">iOS App & Background Playback</h3>
+            <div class="space-y-2 text-xs text-zinc-600 dark:text-white/65 leading-relaxed">
+              <p class="p-3 rounded-2xl bg-black/[0.04] dark:bg-white/[0.05]">
+                <strong class="text-zinc-900 dark:text-white block mb-0.5">Install on iPhone / iPad</strong>
+                Open in <strong>Safari</strong>, tap <strong>Share</strong>, and select <strong>"Add to Home Screen"</strong> for full-screen iOS playback.
+              </p>
+              <p class="p-3 rounded-2xl bg-black/[0.04] dark:bg-white/[0.05]">
+                <strong class="text-zinc-900 dark:text-white block mb-0.5">Sync New Google Drive Songs</strong>
+                Whenever you upload new tracks to your Drive folder, tap <strong>Refresh</strong> in the header or pull down on your song list.
+              </p>
+            </div>
+          </section>
+        </div>
+      `;
     }
 
     function handleSearchInput(val) {
@@ -2101,6 +2164,7 @@
     window.onload = function () {
       document.getElementById('pwa-banner-icon').innerHTML = ICONS.musicNote;
       document.getElementById('icon-header-refresh').innerHTML = ICONS.refresh;
+      document.getElementById('icon-header-settings').innerHTML = ICONS.settings;
       document.getElementById('icon-sun').innerHTML = ICONS.sun;
       document.getElementById('icon-moon').innerHTML = ICONS.moon;
       const guideIcon = document.getElementById('guide-logo-icon');
