@@ -1,0 +1,2005 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+  <!-- iOS PWA Readiness Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Aura Music" />
+  <meta name="theme-color" content="#000000" />
+
+  <title>Aura Music — iOS Liquid Glass</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            ios: {
+              red: '#fa2d48',
+              pink: '#ff375f',
+              darkBg: '#000000',
+              darkCard: '#141416',
+              darkElevated: '#1f1f23',
+              lightBg: '#f2f2f7',
+              lightCard: '#ffffff',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Base iOS Reset & Safe Area Variables */
+    :root {
+      --sat: env(safe-area-inset-top, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+    }
+
+    * {
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overscroll-behavior-y: none;
+    }
+
+    /* Hide Scrollbars cleanly like iOS */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Apple Liquid Glass iOS 26 Surfaces */
+    .liquid-glass {
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(32px) saturate(190%);
+      -webkit-backdrop-filter: blur(32px) saturate(190%);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.9), 0 12px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    html.dark .liquid-glass {
+      background: linear-gradient(180deg, rgba(44, 44, 50, 0.76) 0%, rgba(22, 22, 26, 0.88) 100%);
+      backdrop-filter: blur(36px) saturate(200%);
+      -webkit-backdrop-filter: blur(36px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+        inset 0 0 20px rgba(255, 255, 255, 0.03),
+        0 18px 40px rgba(0, 0, 0, 0.72);
+    }
+
+    .liquid-glass-header {
+      background: rgba(242, 242, 247, 0.82);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+    }
+
+    html.dark .liquid-glass-header {
+      background: rgba(0, 0, 0, 0.76);
+      backdrop-filter: blur(28px) saturate(190%);
+      -webkit-backdrop-filter: blur(28px) saturate(190%);
+    }
+
+    .liquid-pill-btn {
+      background: rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease;
+    }
+
+    html.dark .liquid-pill-btn {
+      background: rgba(255, 255, 255, 0.09);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    }
+
+    .liquid-pill-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* Custom Range Sliders (iOS Scrubbing & Volume) */
+    input[type="range"].ios-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type="range"].ios-slider::-webkit-slider-runnable-track {
+      height: 5px;
+      border-radius: 999px;
+    }
+
+    input[type="range"].ios-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 14px;
+      width: 14px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+      margin-top: -4.5px;
+      transition: transform 0.15s ease;
+    }
+
+    input[type="range"].ios-slider:active::-webkit-slider-thumb {
+      transform: scale(1.35);
+    }
+
+    /* Playing Equalizer Bars Animation */
+    @keyframes eqBar1 {
+
+      0%,
+      100% {
+        height: 25%;
+      }
+
+      50% {
+        height: 95%;
+      }
+    }
+
+    @keyframes eqBar2 {
+
+      0%,
+      100% {
+        height: 85%;
+      }
+
+      50% {
+        height: 30%;
+      }
+    }
+
+    @keyframes eqBar3 {
+
+      0%,
+      100% {
+        height: 45%;
+      }
+
+      50% {
+        height: 100%;
+      }
+    }
+
+    @keyframes eqBar4 {
+
+      0%,
+      100% {
+        height: 70%;
+      }
+
+      50% {
+        height: 20%;
+      }
+    }
+
+    .eq-playing .bar-1 {
+      animation: eqBar1 0.7s ease-in-out infinite;
+    }
+
+    .eq-playing .bar-2 {
+      animation: eqBar2 0.55s ease-in-out infinite;
+    }
+
+    .eq-playing .bar-3 {
+      animation: eqBar3 0.8s ease-in-out infinite;
+    }
+
+    .eq-playing .bar-4 {
+      animation: eqBar4 0.6s ease-in-out infinite;
+    }
+
+    /* Album Art Spring Scale */
+    .artwork-spring {
+      transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.55s ease;
+    }
+
+    /* Full Screen Sheet Transition */
+    .now-playing-sheet {
+      transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1);
+      will-change: transform;
+    }
+
+    /* Ambient Background Orbs */
+    @keyframes floatSlow {
+
+      0%,
+      100% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      33% {
+        transform: translate(25px, -30px) scale(1.08);
+      }
+
+      66% {
+        transform: translate(-20px, 20px) scale(0.95);
+      }
+    }
+
+    .ambient-orb {
+      animation: floatSlow 14s ease-in-out infinite;
+    }
+  </style>
+</head>
+
+<body class="bg-ios-lightBg text-zinc-900 dark:bg-black dark:text-white select-none">
+
+  <!-- Main App Shell -->
+  <div id="app"
+    class="relative w-full h-full max-w-2xl mx-auto flex flex-col overflow-hidden bg-ios-lightBg dark:bg-black">
+
+    <!-- Subtle Ambient Top Glow in Dark Mode -->
+    <div
+      class="pointer-events-none fixed inset-x-0 top-0 h-64 bg-gradient-to-b from-[#fa2d48]/[0.07] via-purple-500/[0.03] to-transparent dark:block hidden">
+    </div>
+
+    <!-- iOS PWA Install Banner (Refined Liquid Glass Pill) -->
+    <div id="ios-pwa-banner" class="hidden z-40 px-4 pt-[calc(var(--sat)+8px)] pb-1">
+      <div
+        class="rounded-2xl px-3.5 py-2.5 bg-gradient-to-r from-[#fa2d48] to-[#ff375f] text-white shadow-lg flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-8 h-8 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0"
+            id="pwa-banner-icon"></div>
+          <div class="text-xs leading-tight truncate">
+            <p class="font-semibold tracking-tight">Install Aura Music on iOS</p>
+            <p class="text-white/90 text-[11px] truncate">Tap Share then <span class="font-semibold">"Add to Home
+                Screen"</span></p>
+          </div>
+        </div>
+        <button onclick="dismissPwaBanner()"
+          class="w-7 h-7 rounded-full bg-black/20 flex items-center justify-center hover:bg-black/30 active:scale-90 transition shrink-0"
+          aria-label="Close install banner">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Top Sticky Header -->
+    <header id="app-header"
+      class="z-20 px-5 pt-[calc(var(--sat)+14px)] pb-3 flex items-end justify-between border-b border-black/[0.06] dark:border-white/[0.08] liquid-glass-header transition-colors">
+      <div>
+        <p id="header-subtitle"
+          class="text-[11px] font-semibold uppercase tracking-[0.06em] text-zinc-500 dark:text-zinc-400 mb-0.5">
+          Saturday, Nov 21</p>
+        <h1 id="header-title"
+          class="text-[30px] leading-none font-bold tracking-[-0.025em] text-zinc-900 dark:text-white">Listen Now</h1>
+      </div>
+      <div class="flex items-center gap-2 pb-0.5">
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" id="theme-btn"
+          class="w-9 h-9 rounded-full liquid-pill-btn flex items-center justify-center text-zinc-700 dark:text-white"
+          title="Toggle Dark/Light Mode">
+          <span class="hidden dark:inline text-amber-300" id="icon-sun"></span>
+          <span class="inline dark:hidden text-zinc-700" id="icon-moon"></span>
+        </button>
+        <!-- Profile / iOS Guide Button -->
+        <button onclick="openPwaGuideModal()"
+          class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fa2d48] to-[#ff6b81] text-white font-bold text-xs flex items-center justify-center shadow-md active:scale-90 transition"
+          title="App Info & iOS PWA Guide">
+          AM
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Scrollable Tab Content Area -->
+    <main id="main-scroll" class="flex-1 overflow-y-auto no-scrollbar px-5 pt-4 pb-48 space-y-7">
+      <!-- Views dynamically injected by JS -->
+    </main>
+
+    <!-- Floating Liquid Glass Mini-Player Capsule (Hidden when no Google Drive folder tracks exist) -->
+    <div id="mini-player-container"
+      class="hidden fixed left-0 right-0 bottom-[calc(76px+var(--sab)+10px)] z-30 px-4 max-w-2xl mx-auto pointer-events-none">
+      <div id="mini-player" onclick="openNowPlaying()"
+        class="pointer-events-auto relative w-full rounded-[22px] p-2 pr-3 flex items-center justify-between gap-3 liquid-glass cursor-pointer active:scale-[0.985] transition-transform">
+        <!-- Mini Artwork + Title -->
+        <div class="flex items-center gap-3 min-w-0 flex-1">
+          <div id="mini-art"
+            class="w-11 h-11 rounded-[14px] shrink-0 shadow-md overflow-hidden flex items-center justify-center relative ring-1 ring-white/15">
+            <!-- Dynamic SVG Cover -->
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5">
+              <p id="mini-title"
+                class="text-[14px] font-semibold tracking-[-0.01em] text-zinc-900 dark:text-white truncate">No Folder
+                Linked</p>
+            </div>
+            <p id="mini-artist" class="text-[12px] text-zinc-500 dark:text-white/60 truncate">Google Drive</p>
+          </div>
+        </div>
+
+        <!-- Mini Transport Controls -->
+        <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+          <button onclick="togglePlayPause()" id="mini-play-btn"
+            class="w-10 h-10 rounded-full flex items-center justify-center text-zinc-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition"
+            aria-label="Play or Pause">
+          </button>
+          <button onclick="nextTrack()" id="mini-next-btn"
+            class="w-10 h-10 rounded-full flex items-center justify-center text-zinc-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition"
+            aria-label="Next Track">
+          </button>
+        </div>
+
+        <!-- Subtle Progress Line Inside Capsule -->
+        <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+          <div id="mini-progress-bar" class="h-full bg-[#fa2d48] w-0 transition-all duration-200"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Liquid Glass Bottom Navigation Pill (iOS 26 Style: Listen Now, Library, Search) -->
+    <nav class="fixed bottom-[calc(var(--sab)+10px)] left-0 right-0 z-30 px-4 max-w-2xl mx-auto pointer-events-none">
+      <div class="pointer-events-auto rounded-full p-1.5 liquid-glass grid grid-cols-3 items-center">
+        <button onclick="switchTab('listen')" data-tab="listen"
+          class="tab-btn py-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-[#fa2d48] bg-black/[0.06] dark:bg-white/[0.12] transition-all">
+          <span class="tab-icon" data-icon="listen"></span>
+          <span class="text-[10px] font-semibold tracking-tight">Listen Now</span>
+        </button>
+        <button onclick="switchTab('library')" data-tab="library"
+          class="tab-btn py-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 hover:dark:text-white transition-all">
+          <span class="tab-icon" data-icon="library"></span>
+          <span class="text-[10px] font-medium tracking-tight">Library</span>
+        </button>
+        <button onclick="switchTab('search')" data-tab="search"
+          class="tab-btn py-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 hover:dark:text-white transition-all">
+          <span class="tab-icon" data-icon="search"></span>
+          <span class="text-[10px] font-medium tracking-tight">Search</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ========================================================= -->
+    <!-- FULL-SCREEN iOS "NOW PLAYING" SHEET                       -->
+    <!-- ========================================================= -->
+    <div id="now-playing-sheet"
+      class="now-playing-sheet fixed inset-0 z-50 max-w-2xl mx-auto translate-y-full flex flex-col overflow-hidden bg-zinc-950 text-white">
+
+      <!-- Dynamic Ambient Album Art Blur Background -->
+      <div id="np-ambient-bg"
+        class="absolute inset-0 pointer-events-none overflow-hidden transition-colors duration-1000">
+        <div id="np-orb-1" class="ambient-orb absolute -top-20 -left-20 w-96 h-96 rounded-full blur-[95px] opacity-65">
+        </div>
+        <div id="np-orb-2" class="ambient-orb absolute top-1/3 -right-24 w-96 h-96 rounded-full blur-[105px] opacity-55"
+          style="animation-delay: -5s;"></div>
+        <div id="np-orb-3" class="ambient-orb absolute -bottom-24 left-10 w-80 h-80 rounded-full blur-[95px] opacity-60"
+          style="animation-delay: -9s;"></div>
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-3xl"></div>
+      </div>
+
+      <!-- Swipe Down Handle & Top Bar -->
+      <div id="np-drag-header"
+        class="relative z-10 pt-[calc(var(--sat)+10px)] pb-2 px-6 flex flex-col items-center cursor-grab active:cursor-grabbing">
+        <div class="w-10 h-1.5 rounded-full bg-white/30 mb-3"></div>
+        <div class="w-full flex items-center justify-between">
+          <button onclick="closeNowPlaying()"
+            class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
+            aria-label="Collapse Now Playing">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          <div class="text-center">
+            <p class="text-[10px] uppercase tracking-[0.12em] text-white/55 font-semibold">Playing From</p>
+            <p id="np-context-label" class="text-xs font-semibold text-white/95">Google Drive Folder</p>
+          </div>
+          <button onclick="toggleNpMode('queue')"
+            class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
+            aria-label="Folder Queue">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round">
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <line x1="3" y1="6" x2="3.01" y2="6" />
+              <line x1="3" y1="12" x2="3.01" y2="12" />
+              <line x1="3" y1="18" x2="3.01" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Body of Now Playing -->
+      <div class="relative z-10 flex-1 flex flex-col justify-between px-7 pb-[calc(var(--sab)+20px)] overflow-hidden">
+
+        <!-- VIEW 1: ALBUM ARTWORK + VISUALIZER -->
+        <div id="np-artwork-view" class="flex-1 flex flex-col items-center justify-center my-2 min-h-0">
+          <div id="np-art-wrapper"
+            class="artwork-spring w-full max-w-[295px] sm:max-w-[325px] aspect-square rounded-[28px] shadow-[0_28px_65px_rgba(0,0,0,0.72)] ring-1 ring-white/15 overflow-hidden relative scale-95">
+            <!-- Injected Large SVG Artwork -->
+          </div>
+
+          <!-- Live Frequency Visualizer Canvas -->
+          <div class="w-full max-w-[310px] h-9 mt-5 flex items-center justify-center">
+            <canvas id="visualizer-canvas" class="w-full h-full rounded-xl"></canvas>
+          </div>
+        </div>
+
+        <!-- VIEW 2: SYNCHRONIZED LYRICS -->
+        <div id="np-lyrics-view" class="hidden flex-1 overflow-y-auto no-scrollbar my-3 py-6 px-2 space-y-5">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- VIEW 3: UPCOMING QUEUE -->
+        <div id="np-queue-view" class="hidden flex-1 overflow-y-auto no-scrollbar my-3 space-y-2">
+          <div class="flex items-center justify-between pb-2 border-b border-white/10">
+            <h3 class="text-sm font-bold text-white/90">Playing Next</h3>
+            <span id="np-queue-count" class="text-xs text-white/50">0 tracks</span>
+          </div>
+          <div id="np-queue-list" class="space-y-1.5 pt-1"></div>
+        </div>
+
+        <!-- Bottom Controls Area -->
+        <div class="space-y-4 pt-2">
+          <!-- Track Info & Favorite -->
+          <div class="flex items-center justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <h2 id="np-title" class="text-xl sm:text-2xl font-bold tracking-[-0.02em] truncate">Google Drive Audio
+              </h2>
+              <p id="np-artist" class="text-base text-white/65 truncate">Google Drive Folder</p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button onclick="toggleLikeCurrent()" id="np-like-btn"
+                class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center active:scale-90 transition"
+                aria-label="Favorite Track">
+              </button>
+            </div>
+          </div>
+
+          <!-- Interactive Scrubbable Progress Bar -->
+          <div class="space-y-1.5">
+            <input type="range" id="np-scrubber" min="0" max="100" value="0" step="0.1" class="ios-slider w-full" />
+            <div class="flex justify-between items-center text-[11px] font-medium text-white/60 tabular-nums">
+              <span id="np-current-time">0:00</span>
+              <span id="np-audio-badge"
+                class="px-2 py-0.5 rounded-full bg-white/10 text-[10px] font-semibold tracking-wider uppercase text-white/85">Google
+                Drive Stream</span>
+              <span id="np-remaining-time">-3:00</span>
+            </div>
+          </div>
+
+          <!-- Interactive Scrubbable Progress Bar -->
+          <div class="space-y-1.5">
+            <input type="range" id="np-scrubber" min="0" max="100" value="0" step="0.1" class="ios-slider w-full" />
+            <div class="flex justify-between items-center text-[11px] font-medium text-white/60 tabular-nums">
+              <span id="np-current-time">0:00</span>
+              <span id="np-audio-badge"
+                class="px-2 py-0.5 rounded-full bg-white/10 text-[10px] font-semibold tracking-wider uppercase text-white/85">Spatial
+                Synth</span>
+              <span id="np-remaining-time">-2:45</span>
+            </div>
+          </div>
+
+          <!-- Primary Transport Buttons -->
+          <div class="flex items-center justify-between px-2 py-1">
+            <button onclick="toggleShuffle()" id="np-shuffle-btn"
+              class="w-10 h-10 rounded-full flex items-center justify-center text-white/50 hover:text-white active:scale-90 transition"
+              title="Shuffle">
+            </button>
+
+            <button onclick="prevTrack()" id="np-prev-btn"
+              class="w-12 h-12 rounded-full flex items-center justify-center text-white active:scale-85 transition"
+              title="Previous">
+            </button>
+
+            <button onclick="togglePlayPause()" id="np-play-btn"
+              class="w-16 h-16 rounded-full bg-white text-zinc-950 shadow-xl flex items-center justify-center active:scale-90 transition"
+              title="Play / Pause">
+            </button>
+
+            <button onclick="nextTrack()" id="np-next-btn"
+              class="w-12 h-12 rounded-full flex items-center justify-center text-white active:scale-85 transition"
+              title="Next">
+            </button>
+
+            <button onclick="cycleRepeat()" id="np-repeat-btn"
+              class="w-10 h-10 rounded-full flex items-center justify-center text-white/50 hover:text-white active:scale-90 transition relative"
+              title="Repeat">
+              <span id="np-repeat-icon"></span>
+              <span id="np-repeat-one-dot"
+                class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#fa2d48]"></span>
+            </button>
+          </div>
+
+          <!-- Volume Slider -->
+          <div class="flex items-center gap-3 px-1">
+            <svg class="w-3.5 h-3.5 text-white/60 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M11 5L6 9H2v6h4l5 4V5z" />
+            </svg>
+            <input type="range" id="np-volume" min="0" max="1" step="0.01" value="0.85" class="ios-slider flex-1" />
+            <svg class="w-4 h-4 text-white/60 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M11 5L6 9H2v6h4l5 4V5zm4.5 7c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+            </svg>
+          </div>
+
+          <!-- Bottom Utility Row: Lyrics, AirPlay, Queue -->
+          <div class="flex items-center justify-around pt-1">
+            <button onclick="toggleNpMode('lyrics')" id="btn-mode-lyrics"
+              class="px-4 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-2 text-xs font-semibold transition">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z" />
+              </svg>
+              <span>Lyrics</span>
+            </button>
+
+            <button onclick="openAirplayModal()"
+              class="px-4 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-2 text-xs font-semibold transition">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1" />
+                <polygon points="12 15 17 21 7 21 12 15" fill="currentColor" />
+              </svg>
+              <span id="airplay-label">iPhone</span>
+            </button>
+
+            <button onclick="toggleNpMode('queue')" id="btn-mode-queue"
+              class="px-4 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-2 text-xs font-semibold transition">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round">
+                <line x1="8" y1="6" x2="21" y2="6" />
+                <line x1="8" y1="12" x2="21" y2="12" />
+                <line x1="8" y1="18" x2="21" y2="18" />
+                <line x1="3" y1="6" x2="3.01" y2="6" />
+                <line x1="3" y1="12" x2="3.01" y2="12" />
+                <line x1="3" y1="18" x2="3.01" y2="18" />
+              </svg>
+              <span>Queue</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODALS & ACTION SHEETS                                    -->
+    <!-- ========================================================= -->
+
+    <!-- AirPlay / Audio Output Selector Modal -->
+    <div id="airplay-modal"
+      class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
+      onclick="closeModal('airplay-modal')">
+      <div class="w-full max-w-md rounded-3xl liquid-glass p-5 text-white space-y-4" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <svg class="w-5 h-5 text-[#fa2d48]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1" />
+              <polygon points="12 15 17 21 7 21 12 15" fill="currentColor" />
+            </svg>
+            <h3 class="font-bold text-base">Audio Output</h3>
+          </div>
+          <button onclick="closeModal('airplay-modal')"
+            class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div id="airplay-devices" class="space-y-2">
+          <!-- Devices injected dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Custom Stream URL or Local File Modal -->
+    <div id="add-track-modal"
+      class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
+      onclick="closeModal('add-track-modal')">
+      <div
+        class="w-full max-w-md max-h-[88vh] overflow-y-auto no-scrollbar rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-5 space-y-4 shadow-2xl"
+        onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-lg tracking-tight">Add Music to Library</h3>
+          <button onclick="closeModal('add-track-modal')"
+            class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Upload Local File -->
+        <div
+          class="p-4 rounded-2xl border border-dashed border-zinc-300 dark:border-white/15 bg-zinc-50 dark:bg-white/[0.03] text-center space-y-2 hover:border-[#fa2d48] transition">
+          <div class="w-10 h-10 rounded-2xl bg-[#fa2d48]/15 text-[#fa2d48] mx-auto flex items-center justify-center">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+          </div>
+          <p class="text-sm font-semibold">Import Local Audio Files</p>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400">Supports .MP3, .M4A, .WAV, .OGG from your device</p>
+          <label
+            class="inline-block mt-1 px-4 py-2 rounded-full bg-[#fa2d48] text-white text-xs font-semibold cursor-pointer active:scale-95 transition">
+            Choose Audio File(s)
+            <input type="file" id="local-file-input" accept="audio/*" multiple class="hidden"
+              onchange="handleLocalFiles(event)" />
+          </label>
+        </div>
+
+        <div class="relative flex items-center py-0.5">
+          <div class="flex-grow border-t border-zinc-200 dark:border-white/10"></div>
+          <span class="flex-shrink mx-3 text-[11px] text-zinc-400 uppercase font-semibold tracking-wider">Or Stream
+            URL</span>
+          <div class="flex-grow border-t border-zinc-200 dark:border-white/10"></div>
+        </div>
+
+        <!-- Stream Direct Audio URL Form -->
+        <form onsubmit="handleAddStreamUrl(event)" class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Track Title</label>
+            <input type="text" id="stream-title" required placeholder="e.g., Sunset Boulevard"
+              class="w-full px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Artist Name</label>
+            <input type="text" id="stream-artist" placeholder="e.g., Custom Stream"
+              class="w-full px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
+          </div>
+          <div>
+            <label
+              class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1 flex items-center justify-between">
+              <span>Google Drive Share Link or Audio URL</span>
+              <span class="text-[10px] text-[#fa2d48] font-bold">Drive Auto-Convert</span>
+            </label>
+            <input type="url" id="stream-url" required placeholder="https://drive.google.com/file/d/FILE_ID/view..."
+              class="w-full px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
+            <p class="text-[10px] text-zinc-400 mt-1">Ensure Google Drive file sharing is set to <strong>"Anyone with
+                the link"</strong>.</p>
+          </div>
+          <button type="submit"
+            class="w-full py-3 rounded-full bg-[#fa2d48] text-white font-semibold text-sm shadow-lg active:scale-[0.98] transition">
+            Add & Play Stream
+          </button>
+        </form>
+
+        <div class="relative flex items-center py-0.5">
+          <div class="flex-grow border-t border-zinc-200 dark:border-white/10"></div>
+          <span class="flex-shrink mx-3 text-[11px] text-zinc-400 uppercase font-semibold tracking-wider">Or Sync Drive
+            Folder</span>
+          <div class="flex-grow border-t border-zinc-200 dark:border-white/10"></div>
+        </div>
+
+        <!-- Google Drive Public Folder Sync -->
+        <form onsubmit="handleSyncDriveFolder(event)"
+          class="space-y-2.5 p-3.5 rounded-2xl bg-zinc-100/80 dark:bg-white/[0.04] border border-zinc-200/70 dark:border-white/10">
+          <div class="flex items-center gap-2 text-xs font-bold text-zinc-700 dark:text-zinc-200">
+            <span class="text-blue-500" id="modal-drive-icon"></span>
+            <span>Import Entire Google Drive Music Folder</span>
+          </div>
+          <input type="text" id="gdrive-folder-id" required placeholder="Drive Folder Link or Folder ID"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/10 text-xs outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="password" id="gdrive-api-key" required placeholder="Google Cloud API Key (Drive API v3)"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/10 text-xs outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="submit" id="gdrive-sync-btn"
+            class="w-full py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow active:scale-[0.98] transition">
+            Fetch & Import Folder Tracks
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Create Playlist Modal -->
+    <div id="create-playlist-modal"
+      class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
+      onclick="closeModal('create-playlist-modal')">
+      <div
+        class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-5 space-y-4 shadow-2xl"
+        onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-lg tracking-tight">New Playlist</h3>
+          <button onclick="closeModal('create-playlist-modal')"
+            class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <form onsubmit="handleCreatePlaylist(event)" class="space-y-3">
+          <input type="text" id="new-playlist-name" required placeholder="Playlist Title (e.g., Late Night Drive)"
+            class="w-full px-4 py-3 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm font-medium outline-none focus:ring-2 focus:ring-[#fa2d48]" />
+          <input type="text" id="new-playlist-desc" placeholder="Description (Optional)"
+            class="w-full px-4 py-3 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
+          <button type="submit"
+            class="w-full py-3 rounded-full bg-[#fa2d48] text-white font-semibold text-sm shadow-lg active:scale-[0.98] transition">
+            Create Playlist
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add Track to Playlist Modal -->
+    <div id="add-to-playlist-modal"
+      class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
+      onclick="closeModal('add-to-playlist-modal')">
+      <div
+        class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-5 space-y-4 shadow-2xl"
+        onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between">
+          <h3 class="font-bold text-lg tracking-tight">Add to a Playlist</h3>
+          <button onclick="closeModal('add-to-playlist-modal')"
+            class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div id="playlist-picker-list" class="space-y-2 max-h-64 overflow-y-auto no-scrollbar"></div>
+      </div>
+    </div>
+
+    <!-- iOS PWA Guide Modal -->
+    <div id="pwa-guide-modal"
+      class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
+      onclick="closeModal('pwa-guide-modal')">
+      <div
+        class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-6 space-y-4 shadow-2xl"
+        onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#fa2d48] to-[#ff6b81] text-white flex items-center justify-center shadow"
+              id="guide-logo-icon"></div>
+            <div>
+              <h3 class="font-bold text-base tracking-tight">Aura Music for iOS</h3>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400">Liquid Glass & Spatial Synth</p>
+            </div>
+          </div>
+          <button onclick="closeModal('pwa-guide-modal')"
+            class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="space-y-2.5 text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
+          <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
+            <strong class="text-zinc-900 dark:text-white block mb-1">1. Install as Native iOS App</strong>
+            Open in <strong>Safari</strong> on iPhone/iPad, tap <strong>Share</strong>, and choose <strong>"Add to Home
+              Screen"</strong> for edge-to-edge playback.
+          </p>
+          <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
+            <strong class="text-zinc-900 dark:text-white block mb-1">2. Persistent Google Drive Link</strong>
+            Link any public Google Drive audio URL on <strong>Listen Now</strong> to lock it as your active stream
+            across reloads until unlinked.
+          </p>
+          <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
+            <strong class="text-zinc-900 dark:text-white block mb-1">3. Lock Screen & Spatial Audio</strong>
+            Full iOS Media Session integration plus real-time Web Audio polyphonic synthesis and local MP3/M4A playback.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- iOS PWA Guide Modal -->
+    <div id="pwa-guide-modal"
+      class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
+      onclick="closeModal('pwa-guide-modal')">
+      <div
+        class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-6 space-y-4 shadow-2xl"
+        onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#fa2d48] to-[#ff6b81] text-white flex items-center justify-center shadow"
+              id="guide-logo-icon"></div>
+            <div>
+              <h3 class="font-bold text-base tracking-tight">Aura Music for iOS</h3>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400">Google Drive Folder Streaming</p>
+            </div>
+          </div>
+          <button onclick="closeModal('pwa-guide-modal')"
+            class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="space-y-2.5 text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
+          <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
+            <strong class="text-zinc-900 dark:text-white block mb-1">1. Connect Public Google Drive Folder</strong>
+            Set your Google Drive music folder sharing to <strong>"Anyone with the link"</strong>, paste the Folder
+            URL/ID and your Google Drive API v3 Key on <strong>Listen Now</strong>, and tap <strong>Link & Play
+              Folder</strong>.
+          </p>
+          <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
+            <strong class="text-zinc-900 dark:text-white block mb-1">2. Persistent Sequential Playback</strong>
+            Your folder stays linked in localStorage across reloads—automatically playing sequentially through all audio
+            files until you manually tap <strong>Unlink</strong>.
+          </p>
+          <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
+            <strong class="text-zinc-900 dark:text-white block mb-1">3. Install as Native iOS App</strong>
+            Open in <strong>Safari</strong> on iPhone/iPad, tap <strong>Share</strong>, and choose <strong>"Add to Home
+              Screen"</strong>.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- iOS Toast Notification -->
+    <div id="ios-toast"
+      class="fixed top-[calc(var(--sat)+16px)] left-1/2 -translate-x-1/2 z-[70] pointer-events-none opacity-0 -translate-y-4 transition-all duration-300">
+      <div
+        class="px-4 py-2.5 rounded-full liquid-glass text-zinc-900 dark:text-white text-xs font-semibold flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-[#fa2d48]"></span>
+        <span id="toast-msg">Connected to Google Drive</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /**
+     * ============================================================================
+     * AURA MUSIC — EXCLUSIVE GOOGLE DRIVE FOLDER STREAMING APP FOR iOS
+     * ============================================================================
+     */
+
+    const ICONS = {
+      musicNote: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>`,
+      sun: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>`,
+      moon: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+      play: `<svg class="w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>`,
+      playLg: `<svg class="w-6 h-6 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>`,
+      pause: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1.5"/><rect x="14" y="4" width="4" height="16" rx="1.5"/></svg>`,
+      pauseLg: `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1.5"/><rect x="14" y="4" width="4" height="16" rx="1.5"/></svg>`,
+      next: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><polygon points="4 5 14 12 4 19 4 5"/><rect x="16" y="5" width="3" height="14" rx="1"/></svg>`,
+      nextLg: `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><polygon points="4 5 14 12 4 19 4 5"/><rect x="16" y="5" width="3" height="14" rx="1"/></svg>`,
+      prevLg: `<svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><polygon points="20 5 10 12 20 19 20 5"/><rect x="5" y="5" width="3" height="14" rx="1"/></svg>`,
+      shuffle: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>`,
+      repeat: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>`,
+      heartOutline: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+      heartFilled: `<svg class="w-4 h-4 text-[#fa2d48]" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+      drive: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M7.71 3.5L1.15 15l3.43 6 6.55-11.5L7.71 3.5zm1.72 0l6.56 11.5h6.86L16.29 3.5H9.43zm5.42 12.5H2.58l-1.43 2.5 2.28 2.5h15.14l2.28-2.5-1.43-2.5h-4.57z"/></svg>`,
+      link: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
+      unlink: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18.84 12.25l1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`,
+      refresh: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
+      tabListen: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>`,
+      tabLibrary: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 9h-2.5v3.5c0 1.38-1.12 2.5-2.5 2.5S9.5 15.88 9.5 14.5 10.62 12 12 12c.57 0 1.08.19 1.5.51V7h3.5v4z"/></svg>`,
+      tabSearch: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.2" y2="16.2"/></svg>`
+    };
+
+    const COVER_PALETTES = [
+      { colors: ['#fa2d48', '#8e44ad', '#141418'], artType: 'sakura' },
+      { colors: ['#0a84ff', '#5e5ce6', '#10121a'], artType: 'waves' },
+      { colors: ['#30d158', '#00c7be', '#0d1518'], artType: 'rings' },
+      { colors: ['#ff9500', '#ff2d55', '#1c1c24'], artType: 'sun' }
+    ];
+
+    // ----------------------------------------------------------------------------
+    // 1. APPLICATION STATE & PERSISTENCE (GOOGLE DRIVE FOLDER ONLY)
+    // ----------------------------------------------------------------------------
+    let savedLikes = [];
+    let savedDriveConfig = null; // { folderId, folderName, apiKey }
+
+    try {
+      const rawLikes = localStorage.getItem('aura_gdrive_likes');
+      const rawConfig = localStorage.getItem('aura_gdrive_folder_config');
+      if (rawLikes) savedLikes = JSON.parse(rawLikes);
+      if (rawConfig) savedDriveConfig = JSON.parse(rawConfig);
+    } catch (e) { }
+
+    const state = {
+      tracks: [],
+      queue: [],
+      currentTrackIndex: 0,
+      isPlaying: false,
+      currentTime: 0,
+      volume: 0.85,
+      shuffle: false,
+      repeat: 'all',
+      activeTab: 'listen',
+      searchQuery: '',
+      npMode: 'artwork',
+      contextLabel: 'Google Drive Folder',
+      airplayDevice: 'iPhone',
+      likedIds: new Set(savedLikes),
+      driveConfig: savedDriveConfig,
+      isLoadingFolder: false,
+      folderError: null
+    };
+
+    function currentTrack() {
+      if (!state.tracks.length) return null;
+      const id = state.queue[state.currentTrackIndex];
+      return state.tracks.find(t => t.id === id) || state.tracks[0];
+    }
+
+    function saveUserData() {
+      try {
+        localStorage.setItem('aura_gdrive_likes', JSON.stringify([...state.likedIds]));
+        if (state.driveConfig) {
+          localStorage.setItem('aura_gdrive_folder_config', JSON.stringify(state.driveConfig));
+        } else {
+          localStorage.removeItem('aura_gdrive_folder_config');
+        }
+      } catch (e) { }
+    }
+
+    // ----------------------------------------------------------------------------
+    // 2. GOOGLE DRIVE FOLDER API v3 FETCHING & PARSING
+    // ----------------------------------------------------------------------------
+    function extractDriveFolderId(rawInput) {
+      const trimmed = rawInput.trim();
+      const folderMatch = trimmed.match(/folders\/([a-zA-Z0-9_-]+)/);
+      if (folderMatch && folderMatch[1]) return folderMatch[1];
+      const idParamMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (idParamMatch && idParamMatch[1]) return idParamMatch[1];
+      return trimmed;
+    }
+
+    async function fetchGoogleDriveFolderSongs(folderId, apiKey, autoPlayFirst = true) {
+      state.isLoadingFolder = true;
+      state.folderError = null;
+      renderCurrentTab();
+
+      try {
+        // Optional metadata lookup for folder title
+        let folderName = 'Google Drive Folder';
+        try {
+          const metaRes = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}?fields=name&key=${encodeURIComponent(apiKey)}`);
+          if (metaRes.ok) {
+            const metaJson = await metaRes.json();
+            if (metaJson.name) folderName = metaJson.name;
+          }
+        } catch (e) { }
+
+        // Query all audio files inside the Google Drive folder (mp3, m4a, wav, flac, ogg, aac)
+        const q = encodeURIComponent(
+          `'${folderId}' in parents and trashed = false and (` +
+          `mimeType contains 'audio/' or ` +
+          `name contains '.mp3' or name contains '.m4a' or name contains '.wav' or ` +
+          `name contains '.flac' or name contains '.ogg' or name contains '.aac'` +
+          `)`
+        );
+        const fields = encodeURIComponent('files(id,name,mimeType,size)');
+        const endpoint = `https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=name&pageSize=200&fields=${fields}&key=${encodeURIComponent(apiKey)}`;
+
+        const res = await fetch(endpoint);
+        const data = await res.json();
+
+        if (!res.ok || !data.files) {
+          throw new Error(data.error?.message || 'Unable to access Google Drive folder. Verify Folder ID, sharing ("Anyone with the link"), and API Key.');
+        }
+
+        const audioExtRegex = /\.(mp3|m4a|wav|flac|ogg|aac)$/i;
+        const audioFiles = data.files.filter(f =>
+          (f.mimeType && f.mimeType.startsWith('audio/')) || audioExtRegex.test(f.name)
+        );
+
+        if (audioFiles.length === 0) {
+          throw new Error('No audio files (.mp3, .m4a, .wav, .flac, .ogg, .aac) were found in this Google Drive folder.');
+        }
+
+        const loadedTracks = audioFiles.map((file, idx) => {
+          const cleanTitle = file.name.replace(audioExtRegex, '');
+          const extMatch = file.name.match(audioExtRegex);
+          const formatLabel = extMatch ? extMatch[1].toUpperCase() : 'AUDIO';
+          const palette = COVER_PALETTES[idx % COVER_PALETTES.length];
+
+          return {
+            id: `gdrive-${file.id}`,
+            fileId: file.id,
+            title: cleanTitle,
+            artist: folderName,
+            album: folderName,
+            format: formatLabel,
+            duration: 180,
+            colors: palette.colors,
+            artType: palette.artType,
+            audioUrl: `https://drive.usercontent.google.com/download?id=${file.id}&export=download&confirm=t`,
+            fallbackUrl: `https://docs.google.com/uc?export=open&id=${file.id}`,
+            previewUrl: `https://drive.google.com/file/d/${file.id}/preview`,
+            lyrics: [{ time: 0, text: `Streaming "${cleanTitle}" from ${folderName}` }]
+          };
+        });
+
+        state.driveConfig = { folderId, folderName, apiKey };
+        state.tracks = loadedTracks;
+        state.queue = loadedTracks.map(t => t.id);
+        state.currentTrackIndex = 0;
+        state.currentTime = 0;
+        state.contextLabel = folderName;
+        state.isLoadingFolder = false;
+        saveUserData();
+
+        updatePlayerUI();
+        renderCurrentTab();
+        showToast(`Loaded ${loadedTracks.length} songs from "${folderName}"`);
+
+        if (autoPlayFirst && loadedTracks.length > 0) {
+          playTrackById(loadedTracks[0].id, folderName, state.queue);
+        }
+      } catch (err) {
+        state.isLoadingFolder = false;
+        state.folderError = err.message || 'Failed to load Google Drive folder.';
+        updatePlayerUI();
+        renderCurrentTab();
+        showToast('Google Drive Folder Error');
+      }
+    }
+
+    function handleConnectDriveFolder(e) {
+      e.preventDefault();
+      const rawFolder = document.getElementById('gdrive-folder-input').value.trim();
+      const apiKey = document.getElementById('gdrive-apikey-input').value.trim();
+      if (!rawFolder || !apiKey) return;
+
+      const folderId = extractDriveFolderId(rawFolder);
+      fetchGoogleDriveFolderSongs(folderId, apiKey, true);
+    }
+
+    function rescanDriveFolder() {
+      if (!state.driveConfig) return;
+      fetchGoogleDriveFolderSongs(state.driveConfig.folderId, state.driveConfig.apiKey, false);
+    }
+
+    function unlinkDriveFolder() {
+      stopPlaybackEngine();
+      state.isPlaying = false;
+      state.driveConfig = null;
+      state.tracks = [];
+      state.queue = [];
+      state.currentTrackIndex = 0;
+      state.currentTime = 0;
+      state.folderError = null;
+      saveUserData();
+
+      toggleDriveEmbedPlayer(null, false);
+      closeNowPlaying();
+      updatePlayerUI();
+      renderCurrentTab();
+      showToast('Google Drive folder unlinked');
+    }
+
+    // ----------------------------------------------------------------------------
+    // 3. HTML5 AUDIO ENGINE FOR GOOGLE DRIVE STREAMING
+    // ----------------------------------------------------------------------------
+    let progressTimer = null;
+    const htmlAudio = new Audio();
+    htmlAudio.setAttribute('playsinline', '');
+    htmlAudio.preload = 'auto';
+
+    function toggleDriveEmbedPlayer(track, show) {
+      let container = document.getElementById('gdrive-embed-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'gdrive-embed-container';
+        container.className = 'w-full max-w-[320px] mt-3 rounded-2xl overflow-hidden bg-black/55 border border-white/15 shadow-lg hidden';
+        const artView = document.getElementById('np-artwork-view');
+        if (artView) artView.appendChild(container);
+      }
+      if (show && track && track.previewUrl) {
+        container.innerHTML = `
+          <div class="px-3 py-1.5 bg-white/10 text-[10px] font-semibold text-white/85 flex items-center justify-between">
+            <span class="flex items-center gap-1.5 text-blue-400">${ICONS.drive} <span class="text-white">Google Drive Embedded Player</span></span>
+            <span>Tap Play</span>
+          </div>
+          <iframe src="${track.previewUrl}" class="w-full h-16 border-0" allow="autoplay"></iframe>
+        `;
+        container.classList.remove('hidden');
+      } else {
+        container.innerHTML = '';
+        container.classList.add('hidden');
+      }
+    }
+
+    function startPlaybackEngine() {
+      const track = currentTrack();
+      if (!track) return;
+
+      stopPlaybackEngine();
+      state.isPlaying = true;
+      toggleDriveEmbedPlayer(track, false);
+
+      htmlAudio.removeAttribute('crossorigin');
+      if (htmlAudio.src !== track.audioUrl && (!track.fallbackUrl || htmlAudio.src !== track.fallbackUrl)) {
+        htmlAudio.src = track.audioUrl;
+      }
+      htmlAudio.currentTime = state.currentTime;
+      htmlAudio.volume = state.volume;
+
+      const handleDriveFallback = () => {
+        if (track.fallbackUrl && htmlAudio.src !== track.fallbackUrl) {
+          htmlAudio.src = track.fallbackUrl;
+          htmlAudio.play().catch(() => {
+            if (track.previewUrl) {
+              toggleDriveEmbedPlayer(track, true);
+              openNowPlaying();
+              showToast('Opened Google Drive Embedded Player');
+            } else {
+              showToast('Unable to stream file from Google Drive');
+              state.isPlaying = false;
+              updatePlayerUI();
+            }
+          });
+        } else if (track.previewUrl) {
+          toggleDriveEmbedPlayer(track, true);
+          openNowPlaying();
+          showToast('Opened Google Drive Embedded Player');
+        } else {
+          showToast('Unable to stream file from Google Drive');
+          state.isPlaying = false;
+          updatePlayerUI();
+        }
+      };
+
+      htmlAudio.onerror = handleDriveFallback;
+      htmlAudio.onended = () => handleTrackEnded();
+      htmlAudio.play().catch(handleDriveFallback);
+
+      progressTimer = setInterval(() => {
+        if (!state.isPlaying) return;
+        const tr = currentTrack();
+        if (!tr) return;
+        if (!isNaN(htmlAudio.duration) && htmlAudio.duration > 0) {
+          tr.duration = Math.floor(htmlAudio.duration);
+          state.currentTime = htmlAudio.currentTime;
+        }
+        updateTimeUI();
+        updateMediaSessionPosition();
+      }, 250);
+
+      updatePlayerUI();
+      updateMediaSessionMetadata();
+    }
+
+    function stopPlaybackEngine() {
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        progressTimer = null;
+      }
+      if (!htmlAudio.paused) {
+        htmlAudio.pause();
+      }
+    }
+
+    function togglePlayPause() {
+      if (!currentTrack()) return;
+      if (state.isPlaying) {
+        state.isPlaying = false;
+        stopPlaybackEngine();
+        updatePlayerUI();
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+      } else {
+        startPlaybackEngine();
+        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+      }
+    }
+
+    function playTrackById(trackId, contextLabel = null, customQueue = null) {
+      if (!state.tracks.length) return;
+      if (customQueue) {
+        state.queue = [...customQueue];
+      } else if (!state.queue.includes(trackId)) {
+        state.queue = state.tracks.map(t => t.id);
+      }
+      const idx = state.queue.indexOf(trackId);
+      state.currentTrackIndex = idx >= 0 ? idx : 0;
+      state.currentTime = 0;
+      if (contextLabel) state.contextLabel = contextLabel;
+
+      startPlaybackEngine();
+      renderCurrentTab();
+    }
+
+    function handleTrackEnded() {
+      if (!state.queue.length) return;
+      if (state.repeat === 'one') {
+        state.currentTime = 0;
+        htmlAudio.currentTime = 0;
+        startPlaybackEngine();
+        return;
+      }
+      if (state.currentTrackIndex < state.queue.length - 1 || state.repeat === 'all') {
+        nextTrack();
+      } else {
+        state.isPlaying = false;
+        state.currentTime = 0;
+        stopPlaybackEngine();
+        updatePlayerUI();
+      }
+    }
+
+    function nextTrack() {
+      if (!state.queue.length) return;
+      if (state.shuffle && state.queue.length > 1) {
+        let nextIdx = Math.floor(Math.random() * state.queue.length);
+        if (nextIdx === state.currentTrackIndex) nextIdx = (nextIdx + 1) % state.queue.length;
+        state.currentTrackIndex = nextIdx;
+      } else {
+        state.currentTrackIndex = (state.currentTrackIndex + 1) % state.queue.length;
+      }
+      state.currentTime = 0;
+      startPlaybackEngine();
+      renderCurrentTab();
+    }
+
+    function prevTrack() {
+      if (!state.queue.length) return;
+      if (state.currentTime > 4) {
+        state.currentTime = 0;
+        htmlAudio.currentTime = 0;
+        updateTimeUI();
+        return;
+      }
+      state.currentTrackIndex = (state.currentTrackIndex - 1 + state.queue.length) % state.queue.length;
+      state.currentTime = 0;
+      startPlaybackEngine();
+      renderCurrentTab();
+    }
+
+    function toggleShuffle() {
+      state.shuffle = !state.shuffle;
+      updatePlayerUI();
+      showToast(state.shuffle ? 'Shuffle On' : 'Shuffle Off');
+    }
+
+    function cycleRepeat() {
+      const order = ['all', 'one', 'off'];
+      state.repeat = order[(order.indexOf(state.repeat) + 1) % order.length];
+      updatePlayerUI();
+      const labels = { off: 'Repeat Off', all: 'Repeat Folder', one: 'Repeat Song' };
+      showToast(labels[state.repeat]);
+    }
+
+    // ----------------------------------------------------------------------------
+    // 4. iOS MEDIA SESSION API
+    // ----------------------------------------------------------------------------
+    function updateMediaSessionMetadata() {
+      if (!('mediaSession' in navigator)) return;
+      const track = currentTrack();
+      if (!track) return;
+      const svgString = encodeURIComponent(generateArtworkSVG(track, true));
+      const artworkUrl = `data:image/svg+xml;utf8,${svgString}`;
+
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.title,
+        artist: track.artist,
+        album: track.album || 'Google Drive Folder',
+        artwork: [{ src: artworkUrl, sizes: '512x512', type: 'image/svg+xml' }]
+      });
+
+      navigator.mediaSession.setActionHandler('play', () => { if (!state.isPlaying) togglePlayPause(); });
+      navigator.mediaSession.setActionHandler('pause', () => { if (state.isPlaying) togglePlayPause(); });
+      navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
+      navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (details.seekTime !== undefined) {
+          state.currentTime = details.seekTime;
+          htmlAudio.currentTime = details.seekTime;
+          updateTimeUI();
+        }
+      });
+    }
+
+    function updateMediaSessionPosition() {
+      if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+        const tr = currentTrack();
+        if (!tr) return;
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: Math.max(tr.duration, 1),
+            playbackRate: 1.0,
+            position: Math.min(state.currentTime, tr.duration)
+          });
+        } catch (e) { }
+      }
+    }
+
+    // ----------------------------------------------------------------------------
+    // 5. LIVE AUDIO VISUALIZER (CANVAS)
+    // ----------------------------------------------------------------------------
+    function startVisualizerLoop() {
+      const canvas = document.getElementById('visualizer-canvas');
+      const ctx = canvas.getContext('2d');
+
+      function draw() {
+        requestAnimationFrame(draw);
+
+        const rect = canvas.getBoundingClientRect();
+        if (canvas.width !== rect.width || canvas.height !== rect.height) {
+          canvas.width = rect.width || 300;
+          canvas.height = rect.height || 36;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const bars = 30;
+        const barWidth = (canvas.width / bars) * 0.54;
+        const gap = (canvas.width / bars) * 0.46;
+
+        for (let i = 0; i < bars; i++) {
+          let val = 14;
+          if (state.isPlaying) {
+            const wave1 = Math.abs(Math.sin(Date.now() * 0.0055 + i * 0.42)) * 165;
+            const wave2 = Math.abs(Math.cos(Date.now() * 0.0032 - i * 0.25)) * 75;
+            val = Math.min(255, Math.max(24, wave1 + wave2));
+          }
+
+          const barHeight = Math.max(4, (val / 255) * (canvas.height - 4));
+          const x = i * (barWidth + gap) + gap / 2;
+          const y = (canvas.height - barHeight) / 2;
+
+          ctx.fillStyle = state.isPlaying ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.24)';
+          ctx.beginPath();
+          ctx.roundRect(x, y, barWidth, barHeight, 4);
+          ctx.fill();
+        }
+      }
+      draw();
+    }
+
+    // ----------------------------------------------------------------------------
+    // 6. PROCEDURAL ALBUM ART GENERATOR
+    // ----------------------------------------------------------------------------
+    function generateArtworkSVG(track, standalone = false) {
+      const [c1, c2, c3] = (track && track.colors) || ['#0a84ff', '#5e5ce6', '#141418'];
+      const gradId = `grad-${track ? track.id : 'default'}-${Math.floor(Math.random() * 10000)}`;
+      const artType = track ? track.artType : 'waves';
+      let motif = '';
+
+      if (artType === 'sakura') {
+        motif = `
+          <circle cx="150" cy="150" r="85" fill="white" fill-opacity="0.14"/>
+          <circle cx="150" cy="150" r="52" fill="white" fill-opacity="0.22"/>
+          <path d="M150 75 C170 115, 210 115, 175 150 C210 185, 170 185, 150 225 C130 185, 90 185, 125 150 C90 115, 130 115, 150 75 Z" fill="white" fill-opacity="0.88"/>
+        `;
+      } else if (artType === 'sun') {
+        motif = `
+          <circle cx="150" cy="135" r="78" fill="white" fill-opacity="0.9"/>
+          <rect x="40" y="152" width="220" height="8" fill="${c3}"/>
+          <rect x="40" y="170" width="220" height="11" fill="${c3}"/>
+          <rect x="40" y="191" width="220" height="14" fill="${c3}"/>
+        `;
+      } else if (artType === 'rings') {
+        motif = `
+          <circle cx="150" cy="150" r="95" stroke="white" stroke-width="6" stroke-opacity="0.25" fill="none"/>
+          <circle cx="150" cy="150" r="65" stroke="white" stroke-width="8" stroke-opacity="0.55" fill="none"/>
+          <circle cx="150" cy="150" r="32" fill="white" fill-opacity="0.9"/>
+        `;
+      } else {
+        motif = `
+          <path d="M0 160 Q 75 100, 150 160 T 300 160 L 300 300 L 0 300 Z" fill="white" fill-opacity="0.25"/>
+          <path d="M0 195 Q 75 140, 150 195 T 300 195 L 300 300 L 0 300 Z" fill="white" fill-opacity="0.45"/>
+        `;
+      }
+
+      return `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" class="w-full h-full object-cover">
+          <defs>
+            <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="${c1}"/>
+              <stop offset="55%" stop-color="${c2}"/>
+              <stop offset="100%" stop-color="${c3}"/>
+            </linearGradient>
+          </defs>
+          <rect width="300" height="300" fill="url(#${gradId})"/>
+          ${motif}
+        </svg>
+      `;
+    }
+
+    // ----------------------------------------------------------------------------
+    // 7. UI RENDERING & NAVIGATION (3 TABS: LISTEN NOW, LIBRARY, SEARCH)
+    // ----------------------------------------------------------------------------
+    function switchTab(tab) {
+      state.activeTab = tab;
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        const isTarget = btn.dataset.tab === tab;
+        btn.classList.toggle('text-[#fa2d48]', isTarget);
+        btn.classList.toggle('bg-black/[0.06]', isTarget);
+        btn.classList.toggle('dark:bg-white/[0.12]', isTarget);
+        btn.classList.toggle('text-zinc-500', !isTarget);
+        btn.classList.toggle('dark:text-white/60', !isTarget);
+      });
+
+      const titles = {
+        listen: 'Listen Now',
+        library: 'Library',
+        search: 'Search'
+      };
+      document.getElementById('header-title').textContent = titles[tab];
+      document.getElementById('main-scroll').scrollTo({ top: 0, behavior: 'smooth' });
+      renderCurrentTab();
+    }
+
+    function renderCurrentTab() {
+      const container = document.getElementById('main-scroll');
+      if (state.activeTab === 'listen') renderListenNow(container);
+      else if (state.activeTab === 'library') renderLibrary(container);
+      else if (state.activeTab === 'search') renderSearch(container);
+    }
+
+    function renderDriveSetupCard() {
+      const cfg = state.driveConfig;
+      const count = state.tracks.length;
+
+      if (cfg) {
+        return `
+          <section class="p-4 rounded-[24px] liquid-glass space-y-3">
+            <div class="flex items-center justify-between gap-2.5">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                  ${ICONS.drive}
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <h2 class="text-[15px] font-bold tracking-[-0.01em] truncate">${cfg.folderName || 'Google Drive Folder'}</h2>
+                    <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase tracking-wider shrink-0">Linked</span>
+                  </div>
+                  <p class="text-[11px] text-zinc-500 dark:text-white/55 truncate">
+                    ${state.isLoadingFolder ? 'Scanning Google Drive folder...' : `${count} audio track${count === 1 ? '' : 's'} • Sequential folder playback`}
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="rescanDriveFolder()" title="Refresh Folder Songs" class="w-9 h-9 rounded-full liquid-pill-btn text-zinc-700 dark:text-white flex items-center justify-center">
+                  ${ICONS.refresh}
+                </button>
+                <button onclick="unlinkDriveFolder()" class="px-3.5 py-2 rounded-full bg-red-500/15 text-red-500 dark:text-red-400 hover:bg-red-500/25 text-xs font-bold active:scale-95 transition flex items-center gap-1.5">
+                  ${ICONS.unlink}
+                  <span>Unlink</span>
+                </button>
+              </div>
+            </div>
+            ${state.folderError ? `<p class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-2xl p-3">${state.folderError}</p>` : ''}
+          </section>
+        `;
+      }
+
+      return `
+        <section class="p-5 rounded-[26px] liquid-glass space-y-4">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-blue-500/15 text-blue-500 dark:text-blue-400 flex items-center justify-center shrink-0">
+              ${ICONS.drive}
+            </div>
+            <div>
+              <h2 class="text-[17px] font-bold tracking-[-0.015em]">Connect Google Drive Folder</h2>
+              <p class="text-xs text-zinc-500 dark:text-white/55">Stream all audio files directly from your Drive folder</p>
+            </div>
+          </div>
+
+          ${state.folderError ? `<p class="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-2xl p-3 leading-relaxed">${state.folderError}</p>` : ''}
+
+          <form onsubmit="handleConnectDriveFolder(event)" class="space-y-3">
+            <div>
+              <label class="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-white/50 mb-1.5">Public Google Drive Folder URL or ID</label>
+              <input type="text" id="gdrive-folder-input" required placeholder="https://drive.google.com/drive/folders/..."
+                     class="w-full px-4 py-3 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] border border-black/[0.05] dark:border-white/[0.1] text-xs font-medium outline-none focus:ring-2 focus:ring-[#fa2d48] placeholder:text-zinc-400 dark:placeholder:text-white/35" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-white/50 mb-1.5">Google Drive API v3 Key</label>
+              <input type="password" id="gdrive-apikey-input" required placeholder="AIzaSy..."
+                     class="w-full px-4 py-3 rounded-2xl bg-black/[0.05] dark:bg-white/[0.08] border border-black/[0.05] dark:border-white/[0.1] text-xs font-medium outline-none focus:ring-2 focus:ring-[#fa2d48] placeholder:text-zinc-400 dark:placeholder:text-white/35" />
+            </div>
+            <button type="submit" ${state.isLoadingFolder ? 'disabled' : ''} class="w-full py-3 rounded-full bg-[#fa2d48] text-white text-xs font-bold shadow-lg active:scale-[0.98] transition flex items-center justify-center gap-2 disabled:opacity-60">
+              ${ICONS.link}
+              <span>${state.isLoadingFolder ? 'Loading Google Drive Songs...' : 'Link & Play Folder'}</span>
+            </button>
+          </form>
+          <p class="text-[11px] text-zinc-500 dark:text-white/45 leading-relaxed">
+            Make sure your Google Drive folder sharing is set to <strong>"Anyone with the link"</strong> and contains .mp3, .m4a, .wav, .flac, .ogg, or .aac files.
+          </p>
+        </section>
+      `;
+    }
+
+    function renderTrackRow(track, idx, contextName, queueIds) {
+      const active = currentTrack();
+      const isCurrent = active && active.id === track.id;
+      const isLiked = state.likedIds.has(track.id);
+
+      return `
+        <div onclick="playTrackById('${track.id}', '${contextName.replace(/'/g, "\\'")}', ${JSON.stringify(queueIds).replace(/"/g, '&quot;')})"
+             class="group flex items-center justify-between gap-3 py-2.5 px-2.5 rounded-2xl hover:bg-black/[0.04] dark:hover:bg-white/[0.06] active:scale-[0.99] transition cursor-pointer ${isCurrent ? 'bg-black/[0.05] dark:bg-white/[0.08]' : ''}">
+          <div class="flex items-center gap-3.5 min-w-0 flex-1">
+            <div class="w-12 h-12 rounded-[14px] overflow-hidden shrink-0 relative shadow-sm ring-1 ring-black/5 dark:ring-white/10">
+              ${generateArtworkSVG(track)}
+              ${isCurrent ? `
+                <div class="absolute inset-0 bg-black/45 flex items-center justify-center">
+                  <div class="flex items-end gap-[2.5px] h-4 ${state.isPlaying ? 'eq-playing' : ''}">
+                    <span class="bar-1 w-[3px] bg-[#fa2d48] rounded-full h-2"></span>
+                    <span class="bar-2 w-[3px] bg-[#fa2d48] rounded-full h-4"></span>
+                    <span class="bar-3 w-[3px] bg-[#fa2d48] rounded-full h-3"></span>
+                    <span class="bar-4 w-[3px] bg-[#fa2d48] rounded-full h-2"></span>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-[15px] font-semibold tracking-[-0.01em] truncate ${isCurrent ? 'text-[#fa2d48]' : 'text-zinc-900 dark:text-white'}">${track.title}</p>
+              <p class="text-[12px] text-zinc-500 dark:text-white/55 truncate mt-0.5">${track.artist} • ${track.format}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
+            <button onclick="toggleLikeTrack('${track.id}')" class="w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 hover:text-[#fa2d48] active:scale-90 transition" aria-label="Favorite">
+              ${isLiked ? ICONS.heartFilled : ICONS.heartOutline}
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // TAB 1: LISTEN NOW (GOOGLE DRIVE FOLDER ONLY)
+    function renderListenNow(container) {
+      const setupHtml = renderDriveSetupCard();
+
+      if (!state.tracks.length) {
+        container.innerHTML = setupHtml;
+        return;
+      }
+
+      const allIds = state.tracks.map(t => t.id);
+      const folderName = state.driveConfig?.folderName || 'Google Drive Folder';
+
+      container.innerHTML = `
+        ${setupHtml}
+
+        <!-- Google Drive Folder Songs List -->
+        <section class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-[19px] font-bold tracking-[-0.015em]">Folder Songs (${state.tracks.length})</h2>
+              <p class="text-xs text-zinc-500 dark:text-white/50">Tap any track to stream sequentially</p>
+            </div>
+            <button onclick="playTrackById('${allIds[0]}', '${folderName.replace(/'/g, "\\'")}', ${JSON.stringify(allIds).replace(/"/g, '&quot;')})"
+                    class="px-4 py-2 rounded-full bg-[#fa2d48] text-white text-xs font-bold shadow active:scale-95 transition flex items-center gap-1.5">
+              ${ICONS.play}
+              <span>Play All</span>
+            </button>
+          </div>
+
+          <div class="divide-y divide-black/[0.05] dark:divide-white/[0.06]">
+            ${state.tracks.map((t, i) => renderTrackRow(t, i, folderName, allIds)).join('')}
+          </div>
+        </section>
+      `;
+    }
+
+    // TAB 2: LIBRARY (GOOGLE DRIVE FOLDER & FAVORITES)
+    function renderLibrary(container) {
+      if (!state.tracks.length) {
+        container.innerHTML = renderDriveSetupCard();
+        return;
+      }
+
+      const allIds = state.tracks.map(t => t.id);
+      const likedTracks = state.tracks.filter(t => state.likedIds.has(t.id));
+      const likedIds = likedTracks.map(t => t.id);
+      const folderName = state.driveConfig?.folderName || 'Google Drive Folder';
+
+      container.innerHTML = `
+        ${renderDriveSetupCard()}
+
+        <!-- Favorite Drive Songs -->
+        <section class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h2 class="text-[19px] font-bold tracking-[-0.015em]">Favorites (${likedTracks.length})</h2>
+            ${likedIds.length ? `<button onclick="playTrackById('${likedIds[0]}', 'Favorite Drive Songs', ${JSON.stringify(likedIds).replace(/"/g, '&quot;')})" class="text-xs font-semibold text-[#fa2d48]">Play Favorites</button>` : ''}
+          </div>
+          <div class="divide-y divide-black/[0.05] dark:divide-white/[0.06]">
+            ${likedTracks.length
+          ? likedTracks.map((t, i) => renderTrackRow(t, i, 'Favorite Drive Songs', likedIds)).join('')
+          : '<p class="text-xs text-zinc-500 dark:text-white/50 py-3">Tap the heart icon on any Google Drive song to save it to Favorites.</p>'}
+          </div>
+        </section>
+
+        <!-- All Songs in Connected Google Drive Folder -->
+        <section class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h2 class="text-[19px] font-bold tracking-[-0.015em]">All Folder Songs (${state.tracks.length})</h2>
+            <button onclick="playTrackById('${allIds[0]}', '${folderName.replace(/'/g, "\\'")}', ${JSON.stringify(allIds).replace(/"/g, '&quot;')})" class="text-xs font-semibold text-[#fa2d48]">Play All</button>
+          </div>
+          <div class="divide-y divide-black/[0.05] dark:divide-white/[0.06]">
+            ${state.tracks.map((t, i) => renderTrackRow(t, i, folderName, allIds)).join('')}
+          </div>
+        </section>
+      `;
+    }
+
+    // TAB 3: SEARCH (SEARCH GOOGLE DRIVE FOLDER SONGS ONLY)
+    function renderSearch(container) {
+      if (!state.tracks.length) {
+        container.innerHTML = renderDriveSetupCard();
+        return;
+      }
+
+      const q = state.searchQuery.trim().toLowerCase();
+      const results = q
+        ? state.tracks.filter(t =>
+          t.title.toLowerCase().includes(q) ||
+          (t.format && t.format.toLowerCase().includes(q))
+        )
+        : state.tracks;
+      const resultIds = results.map(t => t.id);
+      const folderName = state.driveConfig?.folderName || 'Google Drive Folder';
+
+      container.innerHTML = `
+        <div class="space-y-4">
+          <div class="relative">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-white/45">${ICONS.tabSearch}</span>
+            <input type="search" id="search-input" value="${state.searchQuery}" oninput="handleSearchInput(this.value)"
+                   placeholder="Search songs in ${folderName}..."
+                   class="w-full pl-11 pr-4 py-3 rounded-full liquid-glass text-sm font-medium outline-none focus:ring-2 focus:ring-[#fa2d48]" />
+          </div>
+
+          <div class="space-y-1">
+            <p class="text-[11px] font-bold text-zinc-500 dark:text-white/50 uppercase tracking-[0.08em] mb-2">
+              ${q ? `Matching Folder Songs (${results.length})` : `All Folder Songs (${results.length})`}
+            </p>
+            <div class="divide-y divide-black/[0.05] dark:divide-white/[0.06]">
+              ${results.length
+          ? results.map((t, i) => renderTrackRow(t, i, folderName, resultIds)).join('')
+          : `<div class="text-center py-12 text-zinc-500">
+                    <p class="text-sm font-semibold">No songs matching "${state.searchQuery}"</p>
+                  </div>`
+        }
+            </div>
+          </div>
+        </div>
+      `;
+
+      const input = document.getElementById('search-input');
+      if (input && state.searchQuery) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }
+
+    function handleSearchInput(val) {
+      state.searchQuery = val;
+      renderCurrentTab();
+    }
+
+    // ----------------------------------------------------------------------------
+    // 8. FULL-SCREEN NOW PLAYING SHEET & INTERACTIONS
+    // ----------------------------------------------------------------------------
+    function openNowPlaying() {
+      if (!currentTrack()) return;
+      const sheet = document.getElementById('now-playing-sheet');
+      sheet.classList.remove('translate-y-full');
+      updatePlayerUI();
+    }
+
+    function closeNowPlaying() {
+      const sheet = document.getElementById('now-playing-sheet');
+      sheet.classList.add('translate-y-full');
+    }
+
+    let touchStartY = 0;
+    const npHeader = document.getElementById('np-drag-header');
+    npHeader.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    npHeader.addEventListener('touchend', (e) => {
+      const deltaY = e.changedTouches[0].clientY - touchStartY;
+      if (deltaY > 65) closeNowPlaying();
+    }, { passive: true });
+
+    function toggleNpMode(mode) {
+      state.npMode = (state.npMode === mode) ? 'artwork' : mode;
+
+      document.getElementById('np-artwork-view').classList.toggle('hidden', state.npMode !== 'artwork');
+      document.getElementById('np-lyrics-view').classList.toggle('hidden', state.npMode !== 'lyrics');
+      document.getElementById('np-queue-view').classList.toggle('hidden', state.npMode !== 'queue');
+
+      document.getElementById('btn-mode-lyrics').classList.toggle('bg-white/20', state.npMode === 'lyrics');
+      document.getElementById('btn-mode-lyrics').classList.toggle('text-white', state.npMode === 'lyrics');
+      document.getElementById('btn-mode-queue').classList.toggle('bg-white/20', state.npMode === 'queue');
+      document.getElementById('btn-mode-queue').classList.toggle('text-white', state.npMode === 'queue');
+
+      if (state.npMode === 'lyrics') renderLyricsView();
+      if (state.npMode === 'queue') renderQueueView();
+    }
+
+    function renderLyricsView() {
+      const track = currentTrack();
+      if (!track) return;
+      const container = document.getElementById('np-lyrics-view');
+      const lyrics = track.lyrics || [{ time: 0, text: `Streaming "${track.title}" from Google Drive` }];
+
+      container.innerHTML = lyrics.map((line) => `
+        <p class="text-2xl sm:text-3xl font-extrabold leading-snug text-white">
+          ${line.text}
+        </p>
+      `).join('');
+    }
+
+    function renderQueueView() {
+      const list = document.getElementById('np-queue-list');
+      document.getElementById('np-queue-count').textContent = `${state.queue.length} tracks`;
+
+      list.innerHTML = state.queue.map((id, idx) => {
+        const t = state.tracks.find(tr => tr.id === id);
+        if (!t) return '';
+        const isCurrent = idx === state.currentTrackIndex;
+        return `
+          <div onclick="playTrackById('${t.id}')" class="flex items-center justify-between p-2 rounded-2xl ${isCurrent ? 'bg-white/20' : 'hover:bg-white/10'} cursor-pointer">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl overflow-hidden shrink-0">${generateArtworkSVG(t)}</div>
+              <div class="min-w-0">
+                <p class="text-sm font-semibold truncate ${isCurrent ? 'text-[#ff6b81]' : 'text-white'}">${t.title}</p>
+                <p class="text-xs text-white/60 truncate">${t.artist}</p>
+              </div>
+            </div>
+            <span class="text-xs text-white/50 tabular-nums">${t.format}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ----------------------------------------------------------------------------
+    // 9. SYNCING ALL PLAYER UI ELEMENTS
+    // ----------------------------------------------------------------------------
+    function formatTime(seconds) {
+      const s = Math.max(0, Math.floor(seconds));
+      const mins = Math.floor(s / 60);
+      const secs = s % 60;
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    function updatePlayerUI() {
+      const track = currentTrack();
+      const miniContainer = document.getElementById('mini-player-container');
+
+      if (!track) {
+        miniContainer.classList.add('hidden');
+        return;
+      }
+
+      miniContainer.classList.remove('hidden');
+      const isLiked = state.likedIds.has(track.id);
+
+      document.getElementById('mini-title').textContent = track.title;
+      document.getElementById('mini-artist').textContent = track.artist;
+      document.getElementById('mini-art').innerHTML = generateArtworkSVG(track);
+      document.getElementById('mini-play-btn').innerHTML = state.isPlaying ? ICONS.pause : ICONS.play;
+      document.getElementById('mini-next-btn').innerHTML = ICONS.next;
+
+      document.getElementById('np-context-label').textContent = state.contextLabel;
+      document.getElementById('np-title').textContent = track.title;
+      document.getElementById('np-artist').textContent = track.artist;
+      document.getElementById('np-art-wrapper').innerHTML = generateArtworkSVG(track);
+      document.getElementById('np-audio-badge').textContent = `Google Drive • ${track.format}`;
+
+      const artWrap = document.getElementById('np-art-wrapper');
+      if (state.isPlaying) {
+        artWrap.classList.remove('scale-90');
+        artWrap.classList.add('scale-100');
+      } else {
+        artWrap.classList.remove('scale-100');
+        artWrap.classList.add('scale-90');
+      }
+
+      const [c1, c2, c3] = track.colors || ['#0a84ff', '#5e5ce6', '#141418'];
+      document.getElementById('np-orb-1').style.backgroundColor = c1;
+      document.getElementById('np-orb-2').style.backgroundColor = c2;
+      document.getElementById('np-orb-3').style.backgroundColor = c3;
+
+      document.getElementById('np-play-btn').innerHTML = state.isPlaying ? ICONS.pauseLg : ICONS.playLg;
+      document.getElementById('np-prev-btn').innerHTML = ICONS.prevLg;
+      document.getElementById('np-next-btn').innerHTML = ICONS.nextLg;
+      document.getElementById('np-shuffle-btn').innerHTML = ICONS.shuffle;
+      document.getElementById('np-repeat-icon').innerHTML = ICONS.repeat;
+
+      document.getElementById('np-like-btn').innerHTML = isLiked ? ICONS.heartFilled : ICONS.heartOutline;
+
+      const shufBtn = document.getElementById('np-shuffle-btn');
+      shufBtn.classList.toggle('text-[#fa2d48]', state.shuffle);
+      shufBtn.classList.toggle('bg-white/15', state.shuffle);
+      shufBtn.classList.toggle('text-white/50', !state.shuffle);
+
+      const repBtn = document.getElementById('np-repeat-btn');
+      const repDot = document.getElementById('np-repeat-one-dot');
+      repBtn.classList.toggle('text-[#fa2d48]', state.repeat !== 'off');
+      repBtn.classList.toggle('bg-white/15', state.repeat !== 'off');
+      repBtn.classList.toggle('text-white/50', state.repeat === 'off');
+      repDot.classList.toggle('hidden', state.repeat !== 'one');
+
+      updateTimeUI();
+      if (state.npMode === 'queue') renderQueueView();
+    }
+
+    function updateTimeUI() {
+      const track = currentTrack();
+      if (!track) return;
+      const pct = Math.min(100, (state.currentTime / Math.max(track.duration, 1)) * 100);
+
+      document.getElementById('mini-progress-bar').style.width = `${pct}%`;
+
+      const scrubber = document.getElementById('np-scrubber');
+      scrubber.value = pct;
+      scrubber.style.background = `linear-gradient(to right, #ffffff ${pct}%, rgba(255,255,255,0.22) ${pct}%)`;
+
+      document.getElementById('np-current-time').textContent = formatTime(state.currentTime);
+      document.getElementById('np-remaining-time').textContent = `-${formatTime(track.duration - state.currentTime)}`;
+    }
+
+    document.getElementById('np-scrubber').addEventListener('input', (e) => {
+      const track = currentTrack();
+      if (!track) return;
+      const pct = parseFloat(e.target.value);
+      state.currentTime = (pct / 100) * track.duration;
+      htmlAudio.currentTime = state.currentTime;
+      updateTimeUI();
+    });
+
+    const volSlider = document.getElementById('np-volume');
+    function updateVolumeSliderStyle() {
+      const pct = state.volume * 100;
+      volSlider.style.background = `linear-gradient(to right, #ffffff ${pct}%, rgba(255,255,255,0.22) ${pct}%)`;
+    }
+    volSlider.addEventListener('input', (e) => {
+      state.volume = parseFloat(e.target.value);
+      htmlAudio.volume = state.volume;
+      updateVolumeSliderStyle();
+    });
+
+    // ----------------------------------------------------------------------------
+    // 10. FAVORITES, AIRPLAY, THEME & MODALS
+    // ----------------------------------------------------------------------------
+    function toggleLikeTrack(id) {
+      if (state.likedIds.has(id)) {
+        state.likedIds.delete(id);
+        showToast('Removed from Favorites');
+      } else {
+        state.likedIds.add(id);
+        showToast('Added to Favorites');
+      }
+      saveUserData();
+      updatePlayerUI();
+      renderCurrentTab();
+    }
+
+    function toggleLikeCurrent() {
+      const tr = currentTrack();
+      if (tr) toggleLikeTrack(tr.id);
+    }
+
+    function openAirplayModal() {
+      const devices = ['iPhone', 'AirPods Pro', 'HomePod Mini', 'MacBook Pro Speakers'];
+      document.getElementById('airplay-devices').innerHTML = devices.map(name => {
+        const active = state.airplayDevice === name;
+        return `
+          <button onclick="selectAirplayDevice('${name}')" class="w-full p-3.5 rounded-2xl ${active ? 'bg-[#fa2d48]/20 border border-[#fa2d48]' : 'bg-white/5 hover:bg-white/10'} flex items-center justify-between transition">
+            <span class="text-sm font-semibold">${name}</span>
+            ${active ? '<span class="w-2.5 h-2.5 rounded-full bg-[#fa2d48]"></span>' : ''}
+          </button>
+        `;
+      }).join('');
+      openModal('airplay-modal');
+    }
+
+    function selectAirplayDevice(name) {
+      state.airplayDevice = name;
+      document.getElementById('airplay-label').textContent = name;
+      closeModal('airplay-modal');
+      showToast(`Output: ${name}`);
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    let toastTimeout = null;
+    function showToast(msg) {
+      const toast = document.getElementById('ios-toast');
+      document.getElementById('toast-msg').textContent = msg;
+      toast.classList.remove('opacity-0', '-translate-y-4');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', '-translate-y-4');
+      }, 2400);
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.classList.toggle('dark');
+      const isDark = html.classList.contains('dark');
+      document.querySelector('meta[name="theme-color"]').setAttribute('content', isDark ? '#000000' : '#f2f2f7');
+    }
+
+    function dismissPwaBanner() {
+      document.getElementById('ios-pwa-banner').classList.add('hidden');
+      try { localStorage.setItem('aura_pwa_dismissed', '1'); } catch (e) { }
+    }
+
+    function openPwaGuideModal() {
+      openModal('pwa-guide-modal');
+    }
+
+    // ----------------------------------------------------------------------------
+    // 11. INITIALIZATION ON WINDOW LOAD
+    // ----------------------------------------------------------------------------
+    window.onload = function () {
+      document.getElementById('pwa-banner-icon').innerHTML = ICONS.musicNote;
+      document.getElementById('icon-sun').innerHTML = ICONS.sun;
+      document.getElementById('icon-moon').innerHTML = ICONS.moon;
+      document.getElementById('guide-logo-icon').innerHTML = ICONS.musicNote;
+
+      document.querySelectorAll('.tab-icon').forEach(el => {
+        const key = el.dataset.icon;
+        if (key === 'listen') el.innerHTML = ICONS.tabListen;
+        else if (key === 'library') el.innerHTML = ICONS.tabLibrary;
+        else if (key === 'search') el.innerHTML = ICONS.tabSearch;
+      });
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+      document.getElementById('header-subtitle').textContent = dateStr;
+
+      const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+      let dismissed = false;
+      try { dismissed = localStorage.getItem('aura_pwa_dismissed') === '1'; } catch (e) { }
+      if (!isStandalone && !dismissed) {
+        document.getElementById('ios-pwa-banner').classList.remove('hidden');
+      }
+
+      updateVolumeSliderStyle();
+      updatePlayerUI();
+      renderCurrentTab();
+      startVisualizerLoop();
+
+      // Auto-load & sequentially play linked Google Drive folder if already saved
+      if (state.driveConfig && state.driveConfig.folderId && state.driveConfig.apiKey) {
+        fetchGoogleDriveFolderSongs(state.driveConfig.folderId, state.driveConfig.apiKey, true);
+      }
+    };
+  </script>
+</body>
+
+</html>
