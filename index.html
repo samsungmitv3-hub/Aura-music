@@ -1,19 +1,17 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  
   <!-- iOS PWA Readiness Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Aura Music" />
   <meta name="theme-color" content="#000000" />
-
+  
   <title>Aura Music — iOS Liquid Glass</title>
-
+  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -56,8 +54,7 @@
       box-sizing: border-box;
     }
 
-    html,
-    body {
+    html, body {
       margin: 0;
       padding: 0;
       width: 100%;
@@ -73,7 +70,6 @@
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
-
     .no-scrollbar {
       -ms-overflow-style: none;
       scrollbar-width: none;
@@ -116,13 +112,11 @@
       border: 1px solid rgba(0, 0, 0, 0.06);
       transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease;
     }
-
     html.dark .liquid-pill-btn {
       background: rgba(255, 255, 255, 0.09);
       border: 1px solid rgba(255, 255, 255, 0.12);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
     }
-
     .liquid-pill-btn:active {
       transform: scale(0.92);
     }
@@ -134,12 +128,10 @@
       background: transparent;
       cursor: pointer;
     }
-
     input[type="range"].ios-slider::-webkit-slider-runnable-track {
       height: 5px;
       border-radius: 999px;
     }
-
     input[type="range"].ios-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
@@ -147,79 +139,24 @@
       width: 14px;
       border-radius: 50%;
       background: #ffffff;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.45);
       margin-top: -4.5px;
       transition: transform 0.15s ease;
     }
-
     input[type="range"].ios-slider:active::-webkit-slider-thumb {
       transform: scale(1.35);
     }
 
     /* Playing Equalizer Bars Animation */
-    @keyframes eqBar1 {
+    @keyframes eqBar1 { 0%, 100% { height: 25%; } 50% { height: 95%; } }
+    @keyframes eqBar2 { 0%, 100% { height: 85%; } 50% { height: 30%; } }
+    @keyframes eqBar3 { 0%, 100% { height: 45%; } 50% { height: 100%; } }
+    @keyframes eqBar4 { 0%, 100% { height: 70%; } 50% { height: 20%; } }
 
-      0%,
-      100% {
-        height: 25%;
-      }
-
-      50% {
-        height: 95%;
-      }
-    }
-
-    @keyframes eqBar2 {
-
-      0%,
-      100% {
-        height: 85%;
-      }
-
-      50% {
-        height: 30%;
-      }
-    }
-
-    @keyframes eqBar3 {
-
-      0%,
-      100% {
-        height: 45%;
-      }
-
-      50% {
-        height: 100%;
-      }
-    }
-
-    @keyframes eqBar4 {
-
-      0%,
-      100% {
-        height: 70%;
-      }
-
-      50% {
-        height: 20%;
-      }
-    }
-
-    .eq-playing .bar-1 {
-      animation: eqBar1 0.7s ease-in-out infinite;
-    }
-
-    .eq-playing .bar-2 {
-      animation: eqBar2 0.55s ease-in-out infinite;
-    }
-
-    .eq-playing .bar-3 {
-      animation: eqBar3 0.8s ease-in-out infinite;
-    }
-
-    .eq-playing .bar-4 {
-      animation: eqBar4 0.6s ease-in-out infinite;
-    }
+    .eq-playing .bar-1 { animation: eqBar1 0.7s ease-in-out infinite; }
+    .eq-playing .bar-2 { animation: eqBar2 0.55s ease-in-out infinite; }
+    .eq-playing .bar-3 { animation: eqBar3 0.8s ease-in-out infinite; }
+    .eq-playing .bar-4 { animation: eqBar4 0.6s ease-in-out infinite; }
 
     /* Album Art Spring Scale */
     .artwork-spring {
@@ -234,84 +171,53 @@
 
     /* Ambient Background Orbs */
     @keyframes floatSlow {
-
-      0%,
-      100% {
-        transform: translate(0, 0) scale(1);
-      }
-
-      33% {
-        transform: translate(25px, -30px) scale(1.08);
-      }
-
-      66% {
-        transform: translate(-20px, 20px) scale(0.95);
-      }
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(25px, -30px) scale(1.08); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
     }
-
     .ambient-orb {
       animation: floatSlow 14s ease-in-out infinite;
     }
   </style>
 </head>
-
 <body class="bg-ios-lightBg text-zinc-900 dark:bg-black dark:text-white select-none">
 
   <!-- Main App Shell -->
-  <div id="app"
-    class="relative w-full h-full max-w-2xl mx-auto flex flex-col overflow-hidden bg-ios-lightBg dark:bg-black">
+  <div id="app" class="relative w-full h-full max-w-2xl mx-auto flex flex-col overflow-hidden bg-ios-lightBg dark:bg-black">
 
     <!-- Subtle Ambient Top Glow in Dark Mode -->
-    <div
-      class="pointer-events-none fixed inset-x-0 top-0 h-64 bg-gradient-to-b from-[#fa2d48]/[0.07] via-purple-500/[0.03] to-transparent dark:block hidden">
-    </div>
+    <div class="pointer-events-none fixed inset-x-0 top-0 h-64 bg-gradient-to-b from-[#fa2d48]/[0.07] via-purple-500/[0.03] to-transparent dark:block hidden"></div>
 
     <!-- iOS PWA Install Banner (Refined Liquid Glass Pill) -->
     <div id="ios-pwa-banner" class="hidden z-40 px-4 pt-[calc(var(--sat)+8px)] pb-1">
-      <div
-        class="rounded-2xl px-3.5 py-2.5 bg-gradient-to-r from-[#fa2d48] to-[#ff375f] text-white shadow-lg flex items-center justify-between gap-3">
+      <div class="rounded-2xl px-3.5 py-2.5 bg-gradient-to-r from-[#fa2d48] to-[#ff375f] text-white shadow-lg flex items-center justify-between gap-3">
         <div class="flex items-center gap-2.5 min-w-0">
-          <div class="w-8 h-8 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0"
-            id="pwa-banner-icon"></div>
+          <div class="w-8 h-8 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0" id="pwa-banner-icon"></div>
           <div class="text-xs leading-tight truncate">
             <p class="font-semibold tracking-tight">Install Aura Music on iOS</p>
-            <p class="text-white/90 text-[11px] truncate">Tap Share then <span class="font-semibold">"Add to Home
-                Screen"</span></p>
+            <p class="text-white/90 text-[11px] truncate">Tap Share then <span class="font-semibold">"Add to Home Screen"</span></p>
           </div>
         </div>
-        <button onclick="dismissPwaBanner()"
-          class="w-7 h-7 rounded-full bg-black/20 flex items-center justify-center hover:bg-black/30 active:scale-90 transition shrink-0"
-          aria-label="Close install banner">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round">
-            <path d="M18 6L6 18M6 6l12 12" />
-          </svg>
+        <button onclick="dismissPwaBanner()" class="w-7 h-7 rounded-full bg-black/20 flex items-center justify-center hover:bg-black/30 active:scale-90 transition shrink-0" aria-label="Close install banner">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
       </div>
     </div>
 
     <!-- Top Sticky Header -->
-    <header id="app-header"
-      class="z-20 px-5 pt-[calc(var(--sat)+14px)] pb-3 flex items-end justify-between border-b border-black/[0.06] dark:border-white/[0.08] liquid-glass-header transition-colors">
+    <header id="app-header" class="z-20 px-5 pt-[calc(var(--sat)+14px)] pb-3 flex items-end justify-between border-b border-black/[0.06] dark:border-white/[0.08] liquid-glass-header transition-colors">
       <div>
-        <p id="header-subtitle"
-          class="text-[11px] font-semibold uppercase tracking-[0.06em] text-zinc-500 dark:text-zinc-400 mb-0.5">
-          Saturday, Nov 21</p>
-        <h1 id="header-title"
-          class="text-[30px] leading-none font-bold tracking-[-0.025em] text-zinc-900 dark:text-white">Listen Now</h1>
+        <p id="header-subtitle" class="text-[11px] font-semibold uppercase tracking-[0.06em] text-zinc-500 dark:text-zinc-400 mb-0.5">Saturday, Nov 21</p>
+        <h1 id="header-title" class="text-[30px] leading-none font-bold tracking-[-0.025em] text-zinc-900 dark:text-white">Listen Now</h1>
       </div>
       <div class="flex items-center gap-2 pb-0.5">
         <!-- Theme Toggle -->
-        <button onclick="toggleTheme()" id="theme-btn"
-          class="w-9 h-9 rounded-full liquid-pill-btn flex items-center justify-center text-zinc-700 dark:text-white"
-          title="Toggle Dark/Light Mode">
+        <button onclick="toggleTheme()" id="theme-btn" class="w-9 h-9 rounded-full liquid-pill-btn flex items-center justify-center text-zinc-700 dark:text-white" title="Toggle Dark/Light Mode">
           <span class="hidden dark:inline text-amber-300" id="icon-sun"></span>
           <span class="inline dark:hidden text-zinc-700" id="icon-moon"></span>
         </button>
         <!-- Profile / iOS Guide Button -->
-        <button onclick="openPwaGuideModal()"
-          class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fa2d48] to-[#ff6b81] text-white font-bold text-xs flex items-center justify-center shadow-md active:scale-90 transition"
-          title="App Info & iOS PWA Guide">
+        <button onclick="openPwaGuideModal()" class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#fa2d48] to-[#ff6b81] text-white font-bold text-xs flex items-center justify-center shadow-md active:scale-90 transition" title="App Info & iOS PWA Guide">
           AM
         </button>
       </div>
@@ -323,21 +229,16 @@
     </main>
 
     <!-- Floating Liquid Glass Mini-Player Capsule (Hidden when no Google Drive folder tracks exist) -->
-    <div id="mini-player-container"
-      class="hidden fixed left-0 right-0 bottom-[calc(76px+var(--sab)+10px)] z-30 px-4 max-w-2xl mx-auto pointer-events-none">
-      <div id="mini-player" onclick="openNowPlaying()"
-        class="pointer-events-auto relative w-full rounded-[22px] p-2 pr-3 flex items-center justify-between gap-3 liquid-glass cursor-pointer active:scale-[0.985] transition-transform">
+    <div id="mini-player-container" class="hidden fixed left-0 right-0 bottom-[calc(76px+var(--sab)+10px)] z-30 px-4 max-w-2xl mx-auto pointer-events-none">
+      <div id="mini-player" onclick="openNowPlaying()" class="pointer-events-auto relative w-full rounded-[22px] p-2 pr-3 flex items-center justify-between gap-3 liquid-glass cursor-pointer active:scale-[0.985] transition-transform">
         <!-- Mini Artwork + Title -->
         <div class="flex items-center gap-3 min-w-0 flex-1">
-          <div id="mini-art"
-            class="w-11 h-11 rounded-[14px] shrink-0 shadow-md overflow-hidden flex items-center justify-center relative ring-1 ring-white/15">
+          <div id="mini-art" class="w-11 h-11 rounded-[14px] shrink-0 shadow-md overflow-hidden flex items-center justify-center relative ring-1 ring-white/15">
             <!-- Dynamic SVG Cover -->
           </div>
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-1.5">
-              <p id="mini-title"
-                class="text-[14px] font-semibold tracking-[-0.01em] text-zinc-900 dark:text-white truncate">No Folder
-                Linked</p>
+              <p id="mini-title" class="text-[14px] font-semibold tracking-[-0.01em] text-zinc-900 dark:text-white truncate">No Folder Linked</p>
             </div>
             <p id="mini-artist" class="text-[12px] text-zinc-500 dark:text-white/60 truncate">Google Drive</p>
           </div>
@@ -345,13 +246,9 @@
 
         <!-- Mini Transport Controls -->
         <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
-          <button onclick="togglePlayPause()" id="mini-play-btn"
-            class="w-10 h-10 rounded-full flex items-center justify-center text-zinc-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition"
-            aria-label="Play or Pause">
+          <button onclick="togglePlayPause()" id="mini-play-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-zinc-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition" aria-label="Play or Pause">
           </button>
-          <button onclick="nextTrack()" id="mini-next-btn"
-            class="w-10 h-10 rounded-full flex items-center justify-center text-zinc-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition"
-            aria-label="Next Track">
+          <button onclick="nextTrack()" id="mini-next-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-zinc-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition" aria-label="Next Track">
           </button>
         </div>
 
@@ -365,18 +262,15 @@
     <!-- Floating Liquid Glass Bottom Navigation Pill (iOS 26 Style: Listen Now, Library, Search) -->
     <nav class="fixed bottom-[calc(var(--sab)+10px)] left-0 right-0 z-30 px-4 max-w-2xl mx-auto pointer-events-none">
       <div class="pointer-events-auto rounded-full p-1.5 liquid-glass grid grid-cols-3 items-center">
-        <button onclick="switchTab('listen')" data-tab="listen"
-          class="tab-btn py-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-[#fa2d48] bg-black/[0.06] dark:bg-white/[0.12] transition-all">
+        <button onclick="switchTab('listen')" data-tab="listen" class="tab-btn py-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-[#fa2d48] bg-black/[0.06] dark:bg-white/[0.12] transition-all">
           <span class="tab-icon" data-icon="listen"></span>
           <span class="text-[10px] font-semibold tracking-tight">Listen Now</span>
         </button>
-        <button onclick="switchTab('library')" data-tab="library"
-          class="tab-btn py-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 hover:dark:text-white transition-all">
+        <button onclick="switchTab('library')" data-tab="library" class="tab-btn py-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 hover:dark:text-white transition-all">
           <span class="tab-icon" data-icon="library"></span>
           <span class="text-[10px] font-medium tracking-tight">Library</span>
         </button>
-        <button onclick="switchTab('search')" data-tab="search"
-          class="tab-btn py-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 hover:dark:text-white transition-all">
+        <button onclick="switchTab('search')" data-tab="search" class="tab-btn py-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 hover:dark:text-white transition-all">
           <span class="tab-icon" data-icon="search"></span>
           <span class="text-[10px] font-medium tracking-tight">Search</span>
         </button>
@@ -386,61 +280,39 @@
     <!-- ========================================================= -->
     <!-- FULL-SCREEN iOS "NOW PLAYING" SHEET                       -->
     <!-- ========================================================= -->
-    <div id="now-playing-sheet"
-      class="now-playing-sheet fixed inset-0 z-50 max-w-2xl mx-auto translate-y-full flex flex-col overflow-hidden bg-zinc-950 text-white">
-
+    <div id="now-playing-sheet" class="now-playing-sheet fixed inset-0 z-50 max-w-2xl mx-auto translate-y-full flex flex-col overflow-hidden bg-zinc-950 text-white">
+      
       <!-- Dynamic Ambient Album Art Blur Background -->
-      <div id="np-ambient-bg"
-        class="absolute inset-0 pointer-events-none overflow-hidden transition-colors duration-1000">
-        <div id="np-orb-1" class="ambient-orb absolute -top-20 -left-20 w-96 h-96 rounded-full blur-[95px] opacity-65">
-        </div>
-        <div id="np-orb-2" class="ambient-orb absolute top-1/3 -right-24 w-96 h-96 rounded-full blur-[105px] opacity-55"
-          style="animation-delay: -5s;"></div>
-        <div id="np-orb-3" class="ambient-orb absolute -bottom-24 left-10 w-80 h-80 rounded-full blur-[95px] opacity-60"
-          style="animation-delay: -9s;"></div>
+      <div id="np-ambient-bg" class="absolute inset-0 pointer-events-none overflow-hidden transition-colors duration-1000">
+        <div id="np-orb-1" class="ambient-orb absolute -top-20 -left-20 w-96 h-96 rounded-full blur-[95px] opacity-65"></div>
+        <div id="np-orb-2" class="ambient-orb absolute top-1/3 -right-24 w-96 h-96 rounded-full blur-[105px] opacity-55" style="animation-delay: -5s;"></div>
+        <div id="np-orb-3" class="ambient-orb absolute -bottom-24 left-10 w-80 h-80 rounded-full blur-[95px] opacity-60" style="animation-delay: -9s;"></div>
         <div class="absolute inset-0 bg-black/40 backdrop-blur-3xl"></div>
       </div>
 
       <!-- Swipe Down Handle & Top Bar -->
-      <div id="np-drag-header"
-        class="relative z-10 pt-[calc(var(--sat)+10px)] pb-2 px-6 flex flex-col items-center cursor-grab active:cursor-grabbing">
+      <div id="np-drag-header" class="relative z-10 pt-[calc(var(--sat)+10px)] pb-2 px-6 flex flex-col items-center cursor-grab active:cursor-grabbing">
         <div class="w-10 h-1.5 rounded-full bg-white/30 mb-3"></div>
         <div class="w-full flex items-center justify-between">
-          <button onclick="closeNowPlaying()"
-            class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
-            aria-label="Collapse Now Playing">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M6 9l6 6 6-6" />
-            </svg>
+          <button onclick="closeNowPlaying()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition" aria-label="Collapse Now Playing">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
           </button>
           <div class="text-center">
             <p class="text-[10px] uppercase tracking-[0.12em] text-white/55 font-semibold">Playing From</p>
             <p id="np-context-label" class="text-xs font-semibold text-white/95">Google Drive Folder</p>
           </div>
-          <button onclick="toggleNpMode('queue')"
-            class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
-            aria-label="Folder Queue">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round">
-              <line x1="8" y1="6" x2="21" y2="6" />
-              <line x1="8" y1="12" x2="21" y2="12" />
-              <line x1="8" y1="18" x2="21" y2="18" />
-              <line x1="3" y1="6" x2="3.01" y2="6" />
-              <line x1="3" y1="12" x2="3.01" y2="12" />
-              <line x1="3" y1="18" x2="3.01" y2="18" />
-            </svg>
+          <button onclick="toggleNpMode('queue')" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition" aria-label="Folder Queue">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           </button>
         </div>
       </div>
 
       <!-- Main Body of Now Playing -->
       <div class="relative z-10 flex-1 flex flex-col justify-between px-7 pb-[calc(var(--sab)+20px)] overflow-hidden">
-
+        
         <!-- VIEW 1: ALBUM ARTWORK + VISUALIZER -->
         <div id="np-artwork-view" class="flex-1 flex flex-col items-center justify-center my-2 min-h-0">
-          <div id="np-art-wrapper"
-            class="artwork-spring w-full max-w-[295px] sm:max-w-[325px] aspect-square rounded-[28px] shadow-[0_28px_65px_rgba(0,0,0,0.72)] ring-1 ring-white/15 overflow-hidden relative scale-95">
+          <div id="np-art-wrapper" class="artwork-spring w-full max-w-[295px] sm:max-w-[325px] aspect-square rounded-[28px] shadow-[0_28px_65px_rgba(0,0,0,0.72)] ring-1 ring-white/15 overflow-hidden relative scale-95">
             <!-- Injected Large SVG Artwork -->
           </div>
 
@@ -468,117 +340,67 @@
         <div class="space-y-4 pt-2">
           <!-- Track Info & Favorite -->
           <div class="flex items-center justify-between gap-3">
-            <div class="min-w-0 flex-1">
-              <h2 id="np-title" class="text-xl sm:text-2xl font-bold tracking-[-0.02em] truncate">Google Drive Audio
-              </h2>
-              <p id="np-artist" class="text-base text-white/65 truncate">Google Drive Folder</p>
+            <div class="min-w-0 flex-1 pr-1">
+              <h2 id="np-title" class="text-xl sm:text-2xl font-bold tracking-[-0.02em] truncate leading-tight">Google Drive Audio</h2>
+              <p id="np-artist" class="text-[15px] text-white/65 truncate mt-0.5">Google Drive Folder</p>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-              <button onclick="toggleLikeCurrent()" id="np-like-btn"
-                class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center active:scale-90 transition"
-                aria-label="Favorite Track">
+              <button onclick="toggleLikeCurrent()" id="np-like-btn" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center active:scale-90 transition" aria-label="Favorite Track">
               </button>
             </div>
           </div>
 
-          <!-- Interactive Scrubbable Progress Bar -->
+          <!-- Single Interactive Scrubbable Progress Bar -->
           <div class="space-y-1.5">
             <input type="range" id="np-scrubber" min="0" max="100" value="0" step="0.1" class="ios-slider w-full" />
             <div class="flex justify-between items-center text-[11px] font-medium text-white/60 tabular-nums">
               <span id="np-current-time">0:00</span>
-              <span id="np-audio-badge"
-                class="px-2 py-0.5 rounded-full bg-white/10 text-[10px] font-semibold tracking-wider uppercase text-white/85">Google
-                Drive Stream</span>
-              <span id="np-remaining-time">-3:00</span>
-            </div>
-          </div>
-
-          <!-- Interactive Scrubbable Progress Bar -->
-          <div class="space-y-1.5">
-            <input type="range" id="np-scrubber" min="0" max="100" value="0" step="0.1" class="ios-slider w-full" />
-            <div class="flex justify-between items-center text-[11px] font-medium text-white/60 tabular-nums">
-              <span id="np-current-time">0:00</span>
-              <span id="np-audio-badge"
-                class="px-2 py-0.5 rounded-full bg-white/10 text-[10px] font-semibold tracking-wider uppercase text-white/85">Spatial
-                Synth</span>
-              <span id="np-remaining-time">-2:45</span>
+              <span id="np-audio-badge" class="px-2.5 py-0.5 rounded-full bg-white/10 text-[10px] font-semibold tracking-wider uppercase text-white/85">Google Drive • MP3</span>
+              <span id="np-remaining-time">-0:00</span>
             </div>
           </div>
 
           <!-- Primary Transport Buttons -->
           <div class="flex items-center justify-between px-2 py-1">
-            <button onclick="toggleShuffle()" id="np-shuffle-btn"
-              class="w-10 h-10 rounded-full flex items-center justify-center text-white/50 hover:text-white active:scale-90 transition"
-              title="Shuffle">
+            <button onclick="toggleShuffle()" id="np-shuffle-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-white/50 hover:text-white active:scale-90 transition" title="Shuffle">
             </button>
 
-            <button onclick="prevTrack()" id="np-prev-btn"
-              class="w-12 h-12 rounded-full flex items-center justify-center text-white active:scale-85 transition"
-              title="Previous">
+            <button onclick="prevTrack()" id="np-prev-btn" class="w-12 h-12 rounded-full flex items-center justify-center text-white active:scale-85 transition" title="Previous">
             </button>
 
-            <button onclick="togglePlayPause()" id="np-play-btn"
-              class="w-16 h-16 rounded-full bg-white text-zinc-950 shadow-xl flex items-center justify-center active:scale-90 transition"
-              title="Play / Pause">
+            <button onclick="togglePlayPause()" id="np-play-btn" class="w-16 h-16 rounded-full bg-white text-zinc-950 shadow-xl flex items-center justify-center active:scale-90 transition" title="Play / Pause">
             </button>
 
-            <button onclick="nextTrack()" id="np-next-btn"
-              class="w-12 h-12 rounded-full flex items-center justify-center text-white active:scale-85 transition"
-              title="Next">
+            <button onclick="nextTrack()" id="np-next-btn" class="w-12 h-12 rounded-full flex items-center justify-center text-white active:scale-85 transition" title="Next">
             </button>
 
-            <button onclick="cycleRepeat()" id="np-repeat-btn"
-              class="w-10 h-10 rounded-full flex items-center justify-center text-white/50 hover:text-white active:scale-90 transition relative"
-              title="Repeat">
+            <button onclick="cycleRepeat()" id="np-repeat-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-white/50 hover:text-white active:scale-90 transition relative" title="Repeat">
               <span id="np-repeat-icon"></span>
-              <span id="np-repeat-one-dot"
-                class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#fa2d48]"></span>
+              <span id="np-repeat-one-dot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#fa2d48]"></span>
             </button>
           </div>
 
           <!-- Volume Slider -->
           <div class="flex items-center gap-3 px-1">
-            <svg class="w-3.5 h-3.5 text-white/60 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M11 5L6 9H2v6h4l5 4V5z" />
-            </svg>
+            <svg class="w-3.5 h-3.5 text-white/60 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M11 5L6 9H2v6h4l5 4V5z"/></svg>
             <input type="range" id="np-volume" min="0" max="1" step="0.01" value="0.85" class="ios-slider flex-1" />
-            <svg class="w-4 h-4 text-white/60 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M11 5L6 9H2v6h4l5 4V5zm4.5 7c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
-            </svg>
+            <svg class="w-4 h-4 text-white/60 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M11 5L6 9H2v6h4l5 4V5zm4.5 7c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
           </div>
 
           <!-- Bottom Utility Row: Lyrics, AirPlay, Queue -->
           <div class="flex items-center justify-around pt-1">
-            <button onclick="toggleNpMode('lyrics')" id="btn-mode-lyrics"
-              class="px-4 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-2 text-xs font-semibold transition">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z" />
-              </svg>
+            <button onclick="toggleNpMode('lyrics')" id="btn-mode-lyrics" class="px-4 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-2 text-xs font-semibold transition">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/></svg>
               <span>Lyrics</span>
             </button>
 
-            <button onclick="openAirplayModal()"
-              class="px-4 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-2 text-xs font-semibold transition">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1" />
-                <polygon points="12 15 17 21 7 21 12 15" fill="currentColor" />
-              </svg>
+            <button onclick="openAirplayModal()" class="px-4 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-2 text-xs font-semibold transition">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="12 15 17 21 7 21 12 15" fill="currentColor"/></svg>
               <span id="airplay-label">iPhone</span>
             </button>
 
-            <button onclick="toggleNpMode('queue')" id="btn-mode-queue"
-              class="px-4 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-2 text-xs font-semibold transition">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                stroke-linecap="round">
-                <line x1="8" y1="6" x2="21" y2="6" />
-                <line x1="8" y1="12" x2="21" y2="12" />
-                <line x1="8" y1="18" x2="21" y2="18" />
-                <line x1="3" y1="6" x2="3.01" y2="6" />
-                <line x1="3" y1="12" x2="3.01" y2="12" />
-                <line x1="3" y1="18" x2="3.01" y2="18" />
-              </svg>
+            <button onclick="toggleNpMode('queue')" id="btn-mode-queue" class="px-4 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-2 text-xs font-semibold transition">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
               <span>Queue</span>
             </button>
           </div>
@@ -591,25 +413,15 @@
     <!-- ========================================================= -->
 
     <!-- AirPlay / Audio Output Selector Modal -->
-    <div id="airplay-modal"
-      class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
-      onclick="closeModal('airplay-modal')">
+    <div id="airplay-modal" class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="closeModal('airplay-modal')">
       <div class="w-full max-w-md rounded-3xl liquid-glass p-5 text-white space-y-4" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <svg class="w-5 h-5 text-[#fa2d48]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1" />
-              <polygon points="12 15 17 21 7 21 12 15" fill="currentColor" />
-            </svg>
+            <svg class="w-5 h-5 text-[#fa2d48]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="12 15 17 21 7 21 12 15" fill="currentColor"/></svg>
             <h3 class="font-bold text-base">Audio Output</h3>
           </div>
-          <button onclick="closeModal('airplay-modal')"
-            class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+          <button onclick="closeModal('airplay-modal')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
         <div id="airplay-devices" class="space-y-2">
@@ -619,48 +431,31 @@
     </div>
 
     <!-- Add Custom Stream URL or Local File Modal -->
-    <div id="add-track-modal"
-      class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
-      onclick="closeModal('add-track-modal')">
-      <div
-        class="w-full max-w-md max-h-[88vh] overflow-y-auto no-scrollbar rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-5 space-y-4 shadow-2xl"
-        onclick="event.stopPropagation()">
+    <div id="add-track-modal" class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="closeModal('add-track-modal')">
+      <div class="w-full max-w-md max-h-[88vh] overflow-y-auto no-scrollbar rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-5 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between">
           <h3 class="font-bold text-lg tracking-tight">Add Music to Library</h3>
-          <button onclick="closeModal('add-track-modal')"
-            class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+          <button onclick="closeModal('add-track-modal')" class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
 
         <!-- Upload Local File -->
-        <div
-          class="p-4 rounded-2xl border border-dashed border-zinc-300 dark:border-white/15 bg-zinc-50 dark:bg-white/[0.03] text-center space-y-2 hover:border-[#fa2d48] transition">
+        <div class="p-4 rounded-2xl border border-dashed border-zinc-300 dark:border-white/15 bg-zinc-50 dark:bg-white/[0.03] text-center space-y-2 hover:border-[#fa2d48] transition">
           <div class="w-10 h-10 rounded-2xl bg-[#fa2d48]/15 text-[#fa2d48] mx-auto flex items-center justify-center">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="17 8 12 3 7 8" />
-              <line x1="12" y1="3" x2="12" y2="15" />
-            </svg>
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </div>
           <p class="text-sm font-semibold">Import Local Audio Files</p>
           <p class="text-xs text-zinc-500 dark:text-zinc-400">Supports .MP3, .M4A, .WAV, .OGG from your device</p>
-          <label
-            class="inline-block mt-1 px-4 py-2 rounded-full bg-[#fa2d48] text-white text-xs font-semibold cursor-pointer active:scale-95 transition">
+          <label class="inline-block mt-1 px-4 py-2 rounded-full bg-[#fa2d48] text-white text-xs font-semibold cursor-pointer active:scale-95 transition">
             Choose Audio File(s)
-            <input type="file" id="local-file-input" accept="audio/*" multiple class="hidden"
-              onchange="handleLocalFiles(event)" />
+            <input type="file" id="local-file-input" accept="audio/*" multiple class="hidden" onchange="handleLocalFiles(event)" />
           </label>
         </div>
 
         <div class="relative flex items-center py-0.5">
           <div class="flex-grow border-t border-zinc-200 dark:border-white/10"></div>
-          <span class="flex-shrink mx-3 text-[11px] text-zinc-400 uppercase font-semibold tracking-wider">Or Stream
-            URL</span>
+          <span class="flex-shrink mx-3 text-[11px] text-zinc-400 uppercase font-semibold tracking-wider">Or Stream URL</span>
           <div class="flex-grow border-t border-zinc-200 dark:border-white/10"></div>
         </div>
 
@@ -668,51 +463,40 @@
         <form onsubmit="handleAddStreamUrl(event)" class="space-y-3">
           <div>
             <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Track Title</label>
-            <input type="text" id="stream-title" required placeholder="e.g., Sunset Boulevard"
-              class="w-full px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
+            <input type="text" id="stream-title" required placeholder="e.g., Sunset Boulevard" class="w-full px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
           </div>
           <div>
             <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Artist Name</label>
-            <input type="text" id="stream-artist" placeholder="e.g., Custom Stream"
-              class="w-full px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
+            <input type="text" id="stream-artist" placeholder="e.g., Custom Stream" class="w-full px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
           </div>
           <div>
-            <label
-              class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1 flex items-center justify-between">
+            <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1 flex items-center justify-between">
               <span>Google Drive Share Link or Audio URL</span>
               <span class="text-[10px] text-[#fa2d48] font-bold">Drive Auto-Convert</span>
             </label>
-            <input type="url" id="stream-url" required placeholder="https://drive.google.com/file/d/FILE_ID/view..."
-              class="w-full px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
-            <p class="text-[10px] text-zinc-400 mt-1">Ensure Google Drive file sharing is set to <strong>"Anyone with
-                the link"</strong>.</p>
+            <input type="url" id="stream-url" required placeholder="https://drive.google.com/file/d/FILE_ID/view..." class="w-full px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
+            <p class="text-[10px] text-zinc-400 mt-1">Ensure Google Drive file sharing is set to <strong>"Anyone with the link"</strong>.</p>
           </div>
-          <button type="submit"
-            class="w-full py-3 rounded-full bg-[#fa2d48] text-white font-semibold text-sm shadow-lg active:scale-[0.98] transition">
+          <button type="submit" class="w-full py-3 rounded-full bg-[#fa2d48] text-white font-semibold text-sm shadow-lg active:scale-[0.98] transition">
             Add & Play Stream
           </button>
         </form>
 
         <div class="relative flex items-center py-0.5">
           <div class="flex-grow border-t border-zinc-200 dark:border-white/10"></div>
-          <span class="flex-shrink mx-3 text-[11px] text-zinc-400 uppercase font-semibold tracking-wider">Or Sync Drive
-            Folder</span>
+          <span class="flex-shrink mx-3 text-[11px] text-zinc-400 uppercase font-semibold tracking-wider">Or Sync Drive Folder</span>
           <div class="flex-grow border-t border-zinc-200 dark:border-white/10"></div>
         </div>
 
         <!-- Google Drive Public Folder Sync -->
-        <form onsubmit="handleSyncDriveFolder(event)"
-          class="space-y-2.5 p-3.5 rounded-2xl bg-zinc-100/80 dark:bg-white/[0.04] border border-zinc-200/70 dark:border-white/10">
+        <form onsubmit="handleSyncDriveFolder(event)" class="space-y-2.5 p-3.5 rounded-2xl bg-zinc-100/80 dark:bg-white/[0.04] border border-zinc-200/70 dark:border-white/10">
           <div class="flex items-center gap-2 text-xs font-bold text-zinc-700 dark:text-zinc-200">
             <span class="text-blue-500" id="modal-drive-icon"></span>
             <span>Import Entire Google Drive Music Folder</span>
           </div>
-          <input type="text" id="gdrive-folder-id" required placeholder="Drive Folder Link or Folder ID"
-            class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/10 text-xs outline-none focus:ring-2 focus:ring-blue-500" />
-          <input type="password" id="gdrive-api-key" required placeholder="Google Cloud API Key (Drive API v3)"
-            class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/10 text-xs outline-none focus:ring-2 focus:ring-blue-500" />
-          <button type="submit" id="gdrive-sync-btn"
-            class="w-full py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow active:scale-[0.98] transition">
+          <input type="text" id="gdrive-folder-id" required placeholder="Drive Folder Link or Folder ID" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/10 text-xs outline-none focus:ring-2 focus:ring-blue-500" />
+          <input type="password" id="gdrive-api-key" required placeholder="Google Cloud API Key (Drive API v3)" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/10 text-xs outline-none focus:ring-2 focus:ring-blue-500" />
+          <button type="submit" id="gdrive-sync-btn" class="w-full py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow active:scale-[0.98] transition">
             Fetch & Import Folder Tracks
           </button>
         </form>
@@ -720,29 +504,18 @@
     </div>
 
     <!-- Create Playlist Modal -->
-    <div id="create-playlist-modal"
-      class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
-      onclick="closeModal('create-playlist-modal')">
-      <div
-        class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-5 space-y-4 shadow-2xl"
-        onclick="event.stopPropagation()">
+    <div id="create-playlist-modal" class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="closeModal('create-playlist-modal')">
+      <div class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-5 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between">
           <h3 class="font-bold text-lg tracking-tight">New Playlist</h3>
-          <button onclick="closeModal('create-playlist-modal')"
-            class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+          <button onclick="closeModal('create-playlist-modal')" class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
         <form onsubmit="handleCreatePlaylist(event)" class="space-y-3">
-          <input type="text" id="new-playlist-name" required placeholder="Playlist Title (e.g., Late Night Drive)"
-            class="w-full px-4 py-3 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm font-medium outline-none focus:ring-2 focus:ring-[#fa2d48]" />
-          <input type="text" id="new-playlist-desc" placeholder="Description (Optional)"
-            class="w-full px-4 py-3 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
-          <button type="submit"
-            class="w-full py-3 rounded-full bg-[#fa2d48] text-white font-semibold text-sm shadow-lg active:scale-[0.98] transition">
+          <input type="text" id="new-playlist-name" required placeholder="Playlist Title (e.g., Late Night Drive)" class="w-full px-4 py-3 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm font-medium outline-none focus:ring-2 focus:ring-[#fa2d48]" />
+          <input type="text" id="new-playlist-desc" placeholder="Description (Optional)" class="w-full px-4 py-3 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
+          <button type="submit" class="w-full py-3 rounded-full bg-[#fa2d48] text-white font-semibold text-sm shadow-lg active:scale-[0.98] transition">
             Create Playlist
           </button>
         </form>
@@ -750,20 +523,12 @@
     </div>
 
     <!-- Add Track to Playlist Modal -->
-    <div id="add-to-playlist-modal"
-      class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
-      onclick="closeModal('add-to-playlist-modal')">
-      <div
-        class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-5 space-y-4 shadow-2xl"
-        onclick="event.stopPropagation()">
+    <div id="add-to-playlist-modal" class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="closeModal('add-to-playlist-modal')">
+      <div class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-5 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between">
           <h3 class="font-bold text-lg tracking-tight">Add to a Playlist</h3>
-          <button onclick="closeModal('add-to-playlist-modal')"
-            class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+          <button onclick="closeModal('add-to-playlist-modal')" class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
         <div id="playlist-picker-list" class="space-y-2 max-h-64 overflow-y-auto no-scrollbar"></div>
@@ -771,40 +536,28 @@
     </div>
 
     <!-- iOS PWA Guide Modal -->
-    <div id="pwa-guide-modal"
-      class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
-      onclick="closeModal('pwa-guide-modal')">
-      <div
-        class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-6 space-y-4 shadow-2xl"
-        onclick="event.stopPropagation()">
+    <div id="pwa-guide-modal" class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="closeModal('pwa-guide-modal')">
+      <div class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-6 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div
-              class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#fa2d48] to-[#ff6b81] text-white flex items-center justify-center shadow"
-              id="guide-logo-icon"></div>
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#fa2d48] to-[#ff6b81] text-white flex items-center justify-center shadow" id="guide-logo-icon"></div>
             <div>
               <h3 class="font-bold text-base tracking-tight">Aura Music for iOS</h3>
               <p class="text-xs text-zinc-500 dark:text-zinc-400">Liquid Glass & Spatial Synth</p>
             </div>
           </div>
-          <button onclick="closeModal('pwa-guide-modal')"
-            class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+          <button onclick="closeModal('pwa-guide-modal')" class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
         <div class="space-y-2.5 text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
           <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
             <strong class="text-zinc-900 dark:text-white block mb-1">1. Install as Native iOS App</strong>
-            Open in <strong>Safari</strong> on iPhone/iPad, tap <strong>Share</strong>, and choose <strong>"Add to Home
-              Screen"</strong> for edge-to-edge playback.
+            Open in <strong>Safari</strong> on iPhone/iPad, tap <strong>Share</strong>, and choose <strong>"Add to Home Screen"</strong> for edge-to-edge playback.
           </p>
           <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
             <strong class="text-zinc-900 dark:text-white block mb-1">2. Persistent Google Drive Link</strong>
-            Link any public Google Drive audio URL on <strong>Listen Now</strong> to lock it as your active stream
-            across reloads until unlinked.
+            Link any public Google Drive audio URL on <strong>Listen Now</strong> to lock it as your active stream across reloads until unlinked.
           </p>
           <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
             <strong class="text-zinc-900 dark:text-white block mb-1">3. Lock Screen & Spatial Audio</strong>
@@ -815,56 +568,40 @@
     </div>
 
     <!-- iOS PWA Guide Modal -->
-    <div id="pwa-guide-modal"
-      class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4"
-      onclick="closeModal('pwa-guide-modal')">
-      <div
-        class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-6 space-y-4 shadow-2xl"
-        onclick="event.stopPropagation()">
+    <div id="pwa-guide-modal" class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="closeModal('pwa-guide-modal')">
+      <div class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-6 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div
-              class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#fa2d48] to-[#ff6b81] text-white flex items-center justify-center shadow"
-              id="guide-logo-icon"></div>
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#fa2d48] to-[#ff6b81] text-white flex items-center justify-center shadow" id="guide-logo-icon"></div>
             <div>
               <h3 class="font-bold text-base tracking-tight">Aura Music for iOS</h3>
               <p class="text-xs text-zinc-500 dark:text-zinc-400">Google Drive Folder Streaming</p>
             </div>
           </div>
-          <button onclick="closeModal('pwa-guide-modal')"
-            class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+          <button onclick="closeModal('pwa-guide-modal')" class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
         <div class="space-y-2.5 text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
           <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
             <strong class="text-zinc-900 dark:text-white block mb-1">1. Connect Public Google Drive Folder</strong>
-            Set your Google Drive music folder sharing to <strong>"Anyone with the link"</strong>, paste the Folder
-            URL/ID and your Google Drive API v3 Key on <strong>Listen Now</strong>, and tap <strong>Link & Play
-              Folder</strong>.
+            Set your Google Drive music folder sharing to <strong>"Anyone with the link"</strong>, paste the Folder URL/ID and your Google Drive API v3 Key on <strong>Listen Now</strong>, and tap <strong>Link & Play Folder</strong>.
           </p>
           <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
             <strong class="text-zinc-900 dark:text-white block mb-1">2. Persistent Sequential Playback</strong>
-            Your folder stays linked in localStorage across reloads—automatically playing sequentially through all audio
-            files until you manually tap <strong>Unlink</strong>.
+            Your folder stays linked in localStorage across reloads—automatically playing sequentially through all audio files until you manually tap <strong>Unlink</strong>.
           </p>
           <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
             <strong class="text-zinc-900 dark:text-white block mb-1">3. Install as Native iOS App</strong>
-            Open in <strong>Safari</strong> on iPhone/iPad, tap <strong>Share</strong>, and choose <strong>"Add to Home
-              Screen"</strong>.
+            Open in <strong>Safari</strong> on iPhone/iPad, tap <strong>Share</strong>, and choose <strong>"Add to Home Screen"</strong>.
           </p>
         </div>
       </div>
     </div>
 
     <!-- iOS Toast Notification -->
-    <div id="ios-toast"
-      class="fixed top-[calc(var(--sat)+16px)] left-1/2 -translate-x-1/2 z-[70] pointer-events-none opacity-0 -translate-y-4 transition-all duration-300">
-      <div
-        class="px-4 py-2.5 rounded-full liquid-glass text-zinc-900 dark:text-white text-xs font-semibold flex items-center gap-2">
+    <div id="ios-toast" class="fixed top-[calc(var(--sat)+16px)] left-1/2 -translate-x-1/2 z-[70] pointer-events-none opacity-0 -translate-y-4 transition-all duration-300">
+      <div class="px-4 py-2.5 rounded-full liquid-glass text-zinc-900 dark:text-white text-xs font-semibold flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-[#fa2d48]"></span>
         <span id="toast-msg">Connected to Google Drive</span>
       </div>
@@ -921,7 +658,7 @@
       const rawConfig = localStorage.getItem('aura_gdrive_folder_config');
       if (rawLikes) savedLikes = JSON.parse(rawLikes);
       if (rawConfig) savedDriveConfig = JSON.parse(rawConfig);
-    } catch (e) { }
+    } catch (e) {}
 
     const state = {
       tracks: [],
@@ -957,7 +694,7 @@
         } else {
           localStorage.removeItem('aura_gdrive_folder_config');
         }
-      } catch (e) { }
+      } catch (e) {}
     }
 
     // ----------------------------------------------------------------------------
@@ -986,7 +723,7 @@
             const metaJson = await metaRes.json();
             if (metaJson.name) folderName = metaJson.name;
           }
-        } catch (e) { }
+        } catch (e) {}
 
         // Query all audio files inside the Google Drive folder (mp3, m4a, wav, flac, ogg, aac)
         const q = encodeURIComponent(
@@ -1020,6 +757,7 @@
           const extMatch = file.name.match(audioExtRegex);
           const formatLabel = extMatch ? extMatch[1].toUpperCase() : 'AUDIO';
           const palette = COVER_PALETTES[idx % COVER_PALETTES.length];
+          const mediaStreamUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(file.id)}?alt=media&key=${encodeURIComponent(apiKey)}`;
 
           return {
             id: `gdrive-${file.id}`,
@@ -1028,12 +766,11 @@
             artist: folderName,
             album: folderName,
             format: formatLabel,
-            duration: 180,
+            duration: 0,
             colors: palette.colors,
             artType: palette.artType,
-            audioUrl: `https://drive.usercontent.google.com/download?id=${file.id}&export=download&confirm=t`,
-            fallbackUrl: `https://docs.google.com/uc?export=open&id=${file.id}`,
-            previewUrl: `https://drive.google.com/file/d/${file.id}/preview`,
+            audioUrl: mediaStreamUrl,
+            blobUrl: null,
             lyrics: [{ time: 0, text: `Streaming "${cleanTitle}" from ${folderName}` }]
           };
         });
@@ -1080,6 +817,11 @@
 
     function unlinkDriveFolder() {
       stopPlaybackEngine();
+      state.tracks.forEach(t => {
+        if (t.blobUrl) {
+          try { URL.revokeObjectURL(t.blobUrl); } catch (e) {}
+        }
+      });
       state.isPlaying = false;
       state.driveConfig = null;
       state.tracks = [];
@@ -1089,7 +831,6 @@
       state.folderError = null;
       saveUserData();
 
-      toggleDriveEmbedPlayer(null, false);
       closeNowPlaying();
       updatePlayerUI();
       renderCurrentTab();
@@ -1097,35 +838,35 @@
     }
 
     // ----------------------------------------------------------------------------
-    // 3. HTML5 AUDIO ENGINE FOR GOOGLE DRIVE STREAMING
+    // 3. HTML5 AUDIO ENGINE FOR GOOGLE DRIVE API v3 MEDIA STREAMING
     // ----------------------------------------------------------------------------
     let progressTimer = null;
+    let activeStreamToken = 0;
     const htmlAudio = new Audio();
     htmlAudio.setAttribute('playsinline', '');
     htmlAudio.preload = 'auto';
 
-    function toggleDriveEmbedPlayer(track, show) {
-      let container = document.getElementById('gdrive-embed-container');
-      if (!container) {
-        container = document.createElement('div');
-        container.id = 'gdrive-embed-container';
-        container.className = 'w-full max-w-[320px] mt-3 rounded-2xl overflow-hidden bg-black/55 border border-white/15 shadow-lg hidden';
-        const artView = document.getElementById('np-artwork-view');
-        if (artView) artView.appendChild(container);
+    function setStreamStatusBadge(text) {
+      const badge = document.getElementById('np-audio-badge');
+      if (badge) badge.textContent = text;
+    }
+
+    async function fetchDriveAudioAsBlob(track, token) {
+      setStreamStatusBadge(`Buffering ${track.format}...`);
+      const res = await fetch(track.audioUrl);
+      if (!res.ok) {
+        let errMsg = `HTTP ${res.status}`;
+        try {
+          const errJson = await res.json();
+          if (errJson.error && errJson.error.message) errMsg = errJson.error.message;
+        } catch (e) {}
+        throw new Error(errMsg);
       }
-      if (show && track && track.previewUrl) {
-        container.innerHTML = `
-          <div class="px-3 py-1.5 bg-white/10 text-[10px] font-semibold text-white/85 flex items-center justify-between">
-            <span class="flex items-center gap-1.5 text-blue-400">${ICONS.drive} <span class="text-white">Google Drive Embedded Player</span></span>
-            <span>Tap Play</span>
-          </div>
-          <iframe src="${track.previewUrl}" class="w-full h-16 border-0" allow="autoplay"></iframe>
-        `;
-        container.classList.remove('hidden');
-      } else {
-        container.innerHTML = '';
-        container.classList.add('hidden');
-      }
+      const blob = await res.blob();
+      if (token !== activeStreamToken) return null;
+      const objectUrl = URL.createObjectURL(blob);
+      track.blobUrl = objectUrl;
+      return objectUrl;
     }
 
     function startPlaybackEngine() {
@@ -1134,52 +875,81 @@
 
       stopPlaybackEngine();
       state.isPlaying = true;
-      toggleDriveEmbedPlayer(track, false);
+      const token = ++activeStreamToken;
 
-      htmlAudio.removeAttribute('crossorigin');
-      if (htmlAudio.src !== track.audioUrl && (!track.fallbackUrl || htmlAudio.src !== track.fallbackUrl)) {
-        htmlAudio.src = track.audioUrl;
+      const targetSrc = track.blobUrl || track.audioUrl;
+      setStreamStatusBadge(`Loading ${track.format}...`);
+
+      htmlAudio.onloadedmetadata = () => {
+        if (!isNaN(htmlAudio.duration) && isFinite(htmlAudio.duration) && htmlAudio.duration > 0) {
+          track.duration = htmlAudio.duration;
+          updateTimeUI();
+          updateMediaSessionPosition();
+        }
+      };
+
+      htmlAudio.ondurationchange = () => {
+        if (!isNaN(htmlAudio.duration) && isFinite(htmlAudio.duration) && htmlAudio.duration > 0) {
+          track.duration = htmlAudio.duration;
+          updateTimeUI();
+        }
+      };
+
+      htmlAudio.onplaying = () => {
+        setStreamStatusBadge(`Google Drive • ${track.format}`);
+        updatePlayerUI();
+      };
+
+      htmlAudio.onwaiting = () => {
+        setStreamStatusBadge(`Buffering ${track.format}...`);
+      };
+
+      const handleMediaFallback = async () => {
+        if (token !== activeStreamToken) return;
+        if (!track.blobUrl) {
+          try {
+            const blobUrl = await fetchDriveAudioAsBlob(track, token);
+            if (!blobUrl || token !== activeStreamToken) return;
+            htmlAudio.src = blobUrl;
+            htmlAudio.currentTime = state.currentTime;
+            htmlAudio.volume = state.volume;
+            await htmlAudio.play();
+            setStreamStatusBadge(`Google Drive • ${track.format}`);
+            return;
+          } catch (err) {
+            if (token !== activeStreamToken) return;
+            state.isPlaying = false;
+            setStreamStatusBadge('Stream Error');
+            updatePlayerUI();
+            showToast(`Drive Stream Error: ${err.message}`);
+            return;
+          }
+        }
+        state.isPlaying = false;
+        setStreamStatusBadge('Stream Unavailable');
+        updatePlayerUI();
+        showToast('Unable to stream audio from Google Drive');
+      };
+
+      htmlAudio.onerror = handleMediaFallback;
+      htmlAudio.onended = () => handleTrackEnded();
+
+      if (htmlAudio.src !== targetSrc) {
+        htmlAudio.src = targetSrc;
       }
       htmlAudio.currentTime = state.currentTime;
       htmlAudio.volume = state.volume;
 
-      const handleDriveFallback = () => {
-        if (track.fallbackUrl && htmlAudio.src !== track.fallbackUrl) {
-          htmlAudio.src = track.fallbackUrl;
-          htmlAudio.play().catch(() => {
-            if (track.previewUrl) {
-              toggleDriveEmbedPlayer(track, true);
-              openNowPlaying();
-              showToast('Opened Google Drive Embedded Player');
-            } else {
-              showToast('Unable to stream file from Google Drive');
-              state.isPlaying = false;
-              updatePlayerUI();
-            }
-          });
-        } else if (track.previewUrl) {
-          toggleDriveEmbedPlayer(track, true);
-          openNowPlaying();
-          showToast('Opened Google Drive Embedded Player');
-        } else {
-          showToast('Unable to stream file from Google Drive');
-          state.isPlaying = false;
-          updatePlayerUI();
-        }
-      };
-
-      htmlAudio.onerror = handleDriveFallback;
-      htmlAudio.onended = () => handleTrackEnded();
-      htmlAudio.play().catch(handleDriveFallback);
+      htmlAudio.play().catch(handleMediaFallback);
 
       progressTimer = setInterval(() => {
         if (!state.isPlaying) return;
         const tr = currentTrack();
         if (!tr) return;
-        if (!isNaN(htmlAudio.duration) && htmlAudio.duration > 0) {
-          tr.duration = Math.floor(htmlAudio.duration);
-          state.currentTime = htmlAudio.currentTime;
+        if (!isNaN(htmlAudio.duration) && isFinite(htmlAudio.duration) && htmlAudio.duration > 0) {
+          tr.duration = htmlAudio.duration;
         }
+        state.currentTime = htmlAudio.currentTime || 0;
         updateTimeUI();
         updateMediaSessionPosition();
       }, 250);
@@ -1189,6 +959,7 @@
     }
 
     function stopPlaybackEngine() {
+      activeStreamToken++;
       if (progressTimer) {
         clearInterval(progressTimer);
         progressTimer = null;
@@ -1327,7 +1098,7 @@
             playbackRate: 1.0,
             position: Math.min(state.currentTime, tr.duration)
           });
-        } catch (e) { }
+        } catch (e) {}
       }
     }
 
@@ -1626,8 +1397,8 @@
           </div>
           <div class="divide-y divide-black/[0.05] dark:divide-white/[0.06]">
             ${likedTracks.length
-          ? likedTracks.map((t, i) => renderTrackRow(t, i, 'Favorite Drive Songs', likedIds)).join('')
-          : '<p class="text-xs text-zinc-500 dark:text-white/50 py-3">Tap the heart icon on any Google Drive song to save it to Favorites.</p>'}
+              ? likedTracks.map((t, i) => renderTrackRow(t, i, 'Favorite Drive Songs', likedIds)).join('')
+              : '<p class="text-xs text-zinc-500 dark:text-white/50 py-3">Tap the heart icon on any Google Drive song to save it to Favorites.</p>'}
           </div>
         </section>
 
@@ -1654,9 +1425,9 @@
       const q = state.searchQuery.trim().toLowerCase();
       const results = q
         ? state.tracks.filter(t =>
-          t.title.toLowerCase().includes(q) ||
-          (t.format && t.format.toLowerCase().includes(q))
-        )
+            t.title.toLowerCase().includes(q) ||
+            (t.format && t.format.toLowerCase().includes(q))
+          )
         : state.tracks;
       const resultIds = results.map(t => t.id);
       const folderName = state.driveConfig?.folderName || 'Google Drive Folder';
@@ -1676,11 +1447,11 @@
             </p>
             <div class="divide-y divide-black/[0.05] dark:divide-white/[0.06]">
               ${results.length
-          ? results.map((t, i) => renderTrackRow(t, i, folderName, resultIds)).join('')
-          : `<div class="text-center py-12 text-zinc-500">
+                ? results.map((t, i) => renderTrackRow(t, i, folderName, resultIds)).join('')
+                : `<div class="text-center py-12 text-zinc-500">
                     <p class="text-sm font-semibold">No songs matching "${state.searchQuery}"</p>
                   </div>`
-        }
+              }
             </div>
           </div>
         </div>
@@ -1779,7 +1550,8 @@
     // 9. SYNCING ALL PLAYER UI ELEMENTS
     // ----------------------------------------------------------------------------
     function formatTime(seconds) {
-      const s = Math.max(0, Math.floor(seconds));
+      if (!seconds || isNaN(seconds) || !isFinite(seconds) || seconds < 0) return '0:00';
+      const s = Math.floor(seconds);
       const mins = Math.floor(s / 60);
       const secs = s % 60;
       return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -1807,7 +1579,9 @@
       document.getElementById('np-title').textContent = track.title;
       document.getElementById('np-artist').textContent = track.artist;
       document.getElementById('np-art-wrapper').innerHTML = generateArtworkSVG(track);
-      document.getElementById('np-audio-badge').textContent = `Google Drive • ${track.format}`;
+      if (htmlAudio.readyState >= 2 && !htmlAudio.paused) {
+        document.getElementById('np-audio-badge').textContent = `Google Drive • ${track.format}`;
+      }
 
       const artWrap = document.getElementById('np-art-wrapper');
       if (state.isPlaying) {
@@ -1850,7 +1624,10 @@
     function updateTimeUI() {
       const track = currentTrack();
       if (!track) return;
-      const pct = Math.min(100, (state.currentTime / Math.max(track.duration, 1)) * 100);
+      const totalDur = (!isNaN(htmlAudio.duration) && isFinite(htmlAudio.duration) && htmlAudio.duration > 0)
+        ? htmlAudio.duration
+        : (track.duration || 0);
+      const pct = totalDur > 0 ? Math.min(100, (state.currentTime / totalDur) * 100) : 0;
 
       document.getElementById('mini-progress-bar').style.width = `${pct}%`;
 
@@ -1859,14 +1636,20 @@
       scrubber.style.background = `linear-gradient(to right, #ffffff ${pct}%, rgba(255,255,255,0.22) ${pct}%)`;
 
       document.getElementById('np-current-time').textContent = formatTime(state.currentTime);
-      document.getElementById('np-remaining-time').textContent = `-${formatTime(track.duration - state.currentTime)}`;
+      document.getElementById('np-remaining-time').textContent = totalDur > 0
+        ? `-${formatTime(Math.max(0, totalDur - state.currentTime))}`
+        : '--:--';
     }
 
     document.getElementById('np-scrubber').addEventListener('input', (e) => {
       const track = currentTrack();
       if (!track) return;
+      const totalDur = (!isNaN(htmlAudio.duration) && isFinite(htmlAudio.duration) && htmlAudio.duration > 0)
+        ? htmlAudio.duration
+        : (track.duration || 0);
+      if (totalDur <= 0) return;
       const pct = parseFloat(e.target.value);
-      state.currentTime = (pct / 100) * track.duration;
+      state.currentTime = (pct / 100) * totalDur;
       htmlAudio.currentTime = state.currentTime;
       updateTimeUI();
     });
@@ -1955,7 +1738,7 @@
 
     function dismissPwaBanner() {
       document.getElementById('ios-pwa-banner').classList.add('hidden');
-      try { localStorage.setItem('aura_pwa_dismissed', '1'); } catch (e) { }
+      try { localStorage.setItem('aura_pwa_dismissed', '1'); } catch (e) {}
     }
 
     function openPwaGuideModal() {
@@ -1984,7 +1767,7 @@
 
       const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
       let dismissed = false;
-      try { dismissed = localStorage.getItem('aura_pwa_dismissed') === '1'; } catch (e) { }
+      try { dismissed = localStorage.getItem('aura_pwa_dismissed') === '1'; } catch (e) {}
       if (!isStandalone && !dismissed) {
         document.getElementById('ios-pwa-banner').classList.remove('hidden');
       }
@@ -2001,5 +1784,4 @@
     };
   </script>
 </body>
-
 </html>
