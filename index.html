@@ -7,10 +7,12 @@
   <!-- iOS PWA Readiness Meta Tags -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Aura Music" />
+  <meta name="apple-mobile-web-app-title" content="SP MUSIC" />
   <meta name="theme-color" content="#000000" />
+  <link id="ios-apple-touch-icon" rel="apple-touch-icon" />
+  <link id="app-favicon" rel="icon" type="image/png" />
   
-  <title>Aura Music — iOS Liquid Glass</title>
+  <title>SP MUSIC — iOS Liquid Glass</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -253,7 +255,7 @@
         <div class="flex items-center gap-2.5 min-w-0">
           <div class="w-8 h-8 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0" id="pwa-banner-icon"></div>
           <div class="text-xs leading-tight truncate">
-            <p class="font-semibold tracking-tight">Install Aura Music on iOS</p>
+            <p class="font-semibold tracking-tight">Install SP MUSIC on iOS</p>
             <p class="text-white/90 text-[11px] truncate">Tap Share then <span class="font-semibold">"Add to Home Screen"</span></p>
           </div>
         </div>
@@ -542,98 +544,6 @@
       </div>
     </div>
 
-    <!-- Add Custom Stream URL or Local File Modal -->
-    <div id="add-track-modal" class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="closeModal('add-track-modal')">
-      <div class="w-full max-w-md max-h-[88vh] overflow-y-auto no-scrollbar rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-5 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between">
-          <h3 class="font-bold text-lg tracking-tight">Add Music to Library</h3>
-          <button onclick="closeModal('add-track-modal')" class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-
-        <!-- Upload Local File -->
-        <div class="p-4 rounded-2xl border border-dashed border-zinc-300 dark:border-white/15 bg-zinc-50 dark:bg-white/[0.03] text-center space-y-2 hover:border-[#fa2d48] transition">
-          <div class="w-10 h-10 rounded-2xl bg-[#fa2d48]/15 text-[#fa2d48] mx-auto flex items-center justify-center">
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          </div>
-          <p class="text-sm font-semibold">Import Local Audio Files</p>
-          <p class="text-xs text-zinc-500 dark:text-zinc-400">Supports .MP3, .M4A, .WAV, .OGG from your device</p>
-          <label class="inline-block mt-1 px-4 py-2 rounded-full bg-[#fa2d48] text-white text-xs font-semibold cursor-pointer active:scale-95 transition">
-            Choose Audio File(s)
-            <input type="file" id="local-file-input" accept="audio/*" multiple class="hidden" onchange="handleLocalFiles(event)" />
-          </label>
-        </div>
-
-        <div class="relative flex items-center py-0.5">
-          <div class="flex-grow border-t border-zinc-200 dark:border-white/10"></div>
-          <span class="flex-shrink mx-3 text-[11px] text-zinc-400 uppercase font-semibold tracking-wider">Or Stream URL</span>
-          <div class="flex-grow border-t border-zinc-200 dark:border-white/10"></div>
-        </div>
-
-        <!-- Stream Direct Audio URL Form -->
-        <form onsubmit="handleAddStreamUrl(event)" class="space-y-3">
-          <div>
-            <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Track Title</label>
-            <input type="text" id="stream-title" required placeholder="e.g., Sunset Boulevard" class="w-full px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Artist Name</label>
-            <input type="text" id="stream-artist" placeholder="e.g., Custom Stream" class="w-full px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1 flex items-center justify-between">
-              <span>Google Drive Share Link or Audio URL</span>
-              <span class="text-[10px] text-[#fa2d48] font-bold">Drive Auto-Convert</span>
-            </label>
-            <input type="url" id="stream-url" required placeholder="https://drive.google.com/file/d/FILE_ID/view..." class="w-full px-3.5 py-2.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
-            <p class="text-[10px] text-zinc-400 mt-1">Ensure Google Drive file sharing is set to <strong>"Anyone with the link"</strong>.</p>
-          </div>
-          <button type="submit" class="w-full py-3 rounded-full bg-[#fa2d48] text-white font-semibold text-sm shadow-lg active:scale-[0.98] transition">
-            Add & Play Stream
-          </button>
-        </form>
-
-        <div class="relative flex items-center py-0.5">
-          <div class="flex-grow border-t border-zinc-200 dark:border-white/10"></div>
-          <span class="flex-shrink mx-3 text-[11px] text-zinc-400 uppercase font-semibold tracking-wider">Or Sync Drive Folder</span>
-          <div class="flex-grow border-t border-zinc-200 dark:border-white/10"></div>
-        </div>
-
-        <!-- Google Drive Public Folder Sync -->
-        <form onsubmit="handleSyncDriveFolder(event)" class="space-y-2.5 p-3.5 rounded-2xl bg-zinc-100/80 dark:bg-white/[0.04] border border-zinc-200/70 dark:border-white/10">
-          <div class="flex items-center gap-2 text-xs font-bold text-zinc-700 dark:text-zinc-200">
-            <span class="text-blue-500" id="modal-drive-icon"></span>
-            <span>Import Entire Google Drive Music Folder</span>
-          </div>
-          <input type="text" id="gdrive-folder-id" required placeholder="Drive Folder Link or Folder ID" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/10 text-xs outline-none focus:ring-2 focus:ring-blue-500" />
-          <input type="password" id="gdrive-api-key" required placeholder="Google Cloud API Key (Drive API v3)" class="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-black/50 border border-zinc-200 dark:border-white/10 text-xs outline-none focus:ring-2 focus:ring-blue-500" />
-          <button type="submit" id="gdrive-sync-btn" class="w-full py-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow active:scale-[0.98] transition">
-            Fetch & Import Folder Tracks
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- Create Playlist Modal -->
-    <div id="create-playlist-modal" class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="closeModal('create-playlist-modal')">
-      <div class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-5 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between">
-          <h3 class="font-bold text-lg tracking-tight">New Playlist</h3>
-          <button onclick="closeModal('create-playlist-modal')" class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
-        </div>
-        <form onsubmit="handleCreatePlaylist(event)" class="space-y-3">
-          <input type="text" id="new-playlist-name" required placeholder="Playlist Title (e.g., Late Night Drive)" class="w-full px-4 py-3 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm font-medium outline-none focus:ring-2 focus:ring-[#fa2d48]" />
-          <input type="text" id="new-playlist-desc" placeholder="Description (Optional)" class="w-full px-4 py-3 rounded-2xl bg-zinc-100 dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]" />
-          <button type="submit" class="w-full py-3 rounded-full bg-[#fa2d48] text-white font-semibold text-sm shadow-lg active:scale-[0.98] transition">
-            Create Playlist
-          </button>
-        </form>
-      </div>
-    </div>
-
     <!-- iOS PWA Guide Modal -->
     <div id="pwa-guide-modal" class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="closeModal('pwa-guide-modal')">
       <div class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-6 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
@@ -641,7 +551,7 @@
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#fa2d48] to-[#ff6b81] text-white flex items-center justify-center shadow" id="guide-logo-icon"></div>
             <div>
-              <h3 class="font-bold text-base tracking-tight">Aura Music for iOS</h3>
+              <h3 class="font-bold text-base tracking-tight">SP MUSIC for iOS</h3>
               <p class="text-xs text-zinc-500 dark:text-zinc-400">Google Drive Folder Streaming</p>
             </div>
           </div>
@@ -679,7 +589,7 @@
   <script>
     /**
      * ============================================================================
-     * AURA MUSIC — EXCLUSIVE GOOGLE DRIVE FOLDER STREAMING APP FOR iOS
+     * SP MUSIC — EXCLUSIVE GOOGLE DRIVE FOLDER STREAMING APP FOR iOS
      * ============================================================================
      */
 
@@ -797,6 +707,21 @@
     // ----------------------------------------------------------------------------
     // 2. GOOGLE DRIVE API v3 FOLDER SCANNER & NON-INTERRUPTIVE REFRESH
     // ----------------------------------------------------------------------------
+    function inferAudioMimeType(fileName, apiMimeType) {
+      if (apiMimeType && apiMimeType.startsWith('audio/')) return apiMimeType;
+      const ext = ((fileName || '').split('.').pop() || '').toLowerCase();
+      const map = {
+        mp3: 'audio/mpeg',
+        m4a: 'audio/mp4',
+        aac: 'audio/aac',
+        wav: 'audio/wav',
+        flac: 'audio/flac',
+        ogg: 'audio/ogg',
+        opus: 'audio/opus'
+      };
+      return map[ext] || 'audio/mpeg';
+    }
+
     async function fetchGoogleDriveFolderSongs(folderId, apiKey, silentRefresh = false) {
       state.isLoadingFolder = true;
       state.folderError = '';
@@ -809,7 +734,7 @@
         let folderName = (state.driveConfig && state.driveConfig.folderName) || 'Google Drive Folder';
         try {
           const metaRes = await fetch(
-            `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}?fields=name&key=${encodeURIComponent(apiKey)}&_cb=${cb}`
+            `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}?fields=name&supportsAllDrives=true&key=${encodeURIComponent(apiKey)}&_cb=${cb}`
           );
           if (metaRes.ok) {
             const meta = await metaRes.json();
@@ -820,7 +745,7 @@
         // Query all audio files inside folder
         const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
         const fields = encodeURIComponent('files(id,name,mimeType,size)');
-        const listUrl = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=500&orderBy=name&key=${encodeURIComponent(apiKey)}&_cb=${cb}`;
+        const listUrl = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=500&orderBy=name&includeItemsFromAllDrives=true&supportsAllDrives=true&key=${encodeURIComponent(apiKey)}&_cb=${cb}`;
         const res = await fetch(listUrl);
         const data = await res.json();
 
@@ -849,7 +774,7 @@
             title: cleanTitle,
             artist: folderName,
             format,
-            mimeType: file.mimeType || 'audio/mpeg',
+            mimeType: inferAudioMimeType(file.name, file.mimeType),
             colors: palette.colors,
             artType: palette.artType,
             duration: 0,
@@ -965,55 +890,54 @@
     const blobInFlight = new Map();
     let lastProgressTick = Date.now();
     let audioAnchorCtx = null;
-
-    function ensureAudioSessionAnchor() {
-      try {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (!AudioCtx) return;
-        if (!audioAnchorCtx) {
-          audioAnchorCtx = new AudioCtx();
-          const osc = audioAnchorCtx.createOscillator();
-          const gain = audioAnchorCtx.createGain();
-          gain.gain.value = 0.00001;
-          osc.connect(gain);
-          gain.connect(audioAnchorCtx.destination);
-          osc.start();
-        }
-        if (audioAnchorCtx.state === 'suspended') {
-          audioAnchorCtx.resume().catch(() => {});
-        }
-      } catch (e) {}
-    }
-
-    function playAudioWithTimeout(timeoutMs = 3800) {
+    function playAudioWithTimeout(timeoutMs = 2600) {
       return new Promise((resolve, reject) => {
         let settled = false;
+        const cleanup = () => {
+          clearTimeout(timer);
+          htmlAudio.removeEventListener('error', onAudioError);
+          htmlAudio.removeEventListener('playing', onAudioPlaying);
+        };
+        const onAudioError = () => {
+          if (!settled) {
+            settled = true;
+            cleanup();
+            reject(new Error('Audio element stream error'));
+          }
+        };
+        const onAudioPlaying = () => {
+          if (!settled) {
+            settled = true;
+            cleanup();
+            resolve();
+          }
+        };
         const timer = setTimeout(() => {
           if (!settled) {
             settled = true;
+            cleanup();
             reject(new Error('Stream start timeout'));
           }
         }, timeoutMs);
 
+        htmlAudio.addEventListener('error', onAudioError);
+        htmlAudio.addEventListener('playing', onAudioPlaying);
+
         const playPromise = htmlAudio.play();
         if (playPromise && typeof playPromise.then === 'function') {
           playPromise.then(() => {
-            if (!settled) {
+            if (!settled && !htmlAudio.error) {
               settled = true;
-              clearTimeout(timer);
+              cleanup();
               resolve();
             }
           }).catch(err => {
             if (!settled) {
               settled = true;
-              clearTimeout(timer);
+              cleanup();
               reject(err);
             }
           });
-        } else {
-          settled = true;
-          clearTimeout(timer);
-          resolve();
         }
       });
     }
@@ -1025,9 +949,10 @@
 
       const promise = (async () => {
         try {
-          const res = await fetch(track.streamUrl);
+          const res = await fetch(track.streamUrl, { mode: 'cors', credentials: 'omit' });
           if (!res.ok) throw new Error('HTTP ' + res.status);
           const buf = await res.arrayBuffer();
+          if (!buf || buf.byteLength < 256) throw new Error('Empty audio payload');
           const blob = new Blob([buf], { type: track.mimeType || 'audio/mpeg' });
           const url = URL.createObjectURL(blob);
           blobCache.set(track.id, url);
@@ -1105,114 +1030,194 @@
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 34px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText((track.title || 'Aura Music').slice(0, 22), 256, 265);
+        ctx.fillText((track.title || 'SP MUSIC').slice(0, 22), 256, 265);
         return canvas.toDataURL('image/png');
       } catch (e) {
         return '';
       }
     }
 
-    // ----------------------------------------------------------------------------
-    // 4. PLAYBACK CONTROLS & MEDIA SESSION INTEGRATION
-    // ----------------------------------------------------------------------------
-    function updateMediaSession(track) {
-      if (!('mediaSession' in navigator) || !track) return;
+    function generateAppMusicIcon() {
       try {
-        const artUrl = generateLockScreenArtworkDataUrl(track);
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: track.title,
-          artist: track.artist || state.contextLabel,
-          album: state.contextLabel,
-          artwork: artUrl ? [{ src: artUrl, sizes: '512x512', type: 'image/png' }] : []
-        });
-        navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
 
-        navigator.mediaSession.setActionHandler('play', () => {
-          if (!state.isPlaying) togglePlayPause();
-        });
-        navigator.mediaSession.setActionHandler('pause', () => {
-          if (state.isPlaying) togglePlayPause();
-        });
-        navigator.mediaSession.setActionHandler('previoustrack', () => prevTrack());
-        navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack());
-        navigator.mediaSession.setActionHandler('seekto', (details) => {
-          if (details.seekTime != null && isFinite(htmlAudio.duration)) {
-            htmlAudio.currentTime = details.seekTime;
-            state.currentTime = details.seekTime;
-            updatePositionState();
-            updatePlayerUI();
-          }
-        });
-        navigator.mediaSession.setActionHandler('seekbackward', (details) => {
-          const skip = details.seekOffset || 15;
-          htmlAudio.currentTime = Math.max(0, htmlAudio.currentTime - skip);
-          state.currentTime = htmlAudio.currentTime;
-          updatePositionState();
-        });
-        navigator.mediaSession.setActionHandler('seekforward', (details) => {
-          const skip = details.seekOffset || 15;
-          htmlAudio.currentTime = Math.min(htmlAudio.duration || 0, htmlAudio.currentTime + skip);
-          state.currentTime = htmlAudio.currentTime;
-          updatePositionState();
-        });
+        // Apple Music-inspired vibrant red-pink gradient background
+        const grad = ctx.createLinearGradient(0, 0, 512, 512);
+        grad.addColorStop(0, '#ff375f');
+        grad.addColorStop(0.55, '#fa2d48');
+        grad.addColorStop(1, '#c81d38');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Soft top highlight glow
+        const glow = ctx.createRadialGradient(180, 120, 20, 256, 256, 360);
+        glow.addColorStop(0, 'rgba(255,255,255,0.28)');
+        glow.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Crisp double beamed eighth-note music icon
+        ctx.fillStyle = '#ffffff';
+        ctx.save();
+        ctx.translate(256, 262);
+
+        // Left note head
+        ctx.beginPath();
+        ctx.ellipse(-62, 74, 42, 32, -0.35, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Right note head
+        ctx.beginPath();
+        ctx.ellipse(68, 52, 42, 32, -0.35, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Stems & top beam
+        ctx.beginPath();
+        ctx.moveTo(-32, 68);
+        ctx.lineTo(-32, -96);
+        ctx.lineTo(98, -118);
+        ctx.lineTo(98, 46);
+        ctx.lineTo(74, 46);
+        ctx.lineTo(74, -76);
+        ctx.lineTo(-8, -62);
+        ctx.lineTo(-8, 68);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+
+        const dataUrl = canvas.toDataURL('image/png');
+        const touchIcon = document.getElementById('ios-apple-touch-icon');
+        const favIcon = document.getElementById('app-favicon');
+        if (touchIcon) touchIcon.href = dataUrl;
+        if (favIcon) favIcon.href = dataUrl;
       } catch (e) {}
     }
 
-    function updatePositionState() {
-      if (!('mediaSession' in navigator) || !('setPositionState' in navigator.mediaSession)) return;
+    // ----------------------------------------------------------------------------
+    // 4. PLAYBACK CONTROLS & MEDIA SESSION INTEGRATION
+    // ----------------------------------------------------------------------------
+    function ensureAudioSessionAnchor() {
       try {
-        if (isFinite(htmlAudio.duration) && htmlAudio.duration > 0) {
-          navigator.mediaSession.setPositionState({
-            duration: htmlAudio.duration,
-            playbackRate: htmlAudio.playbackRate || 1,
-            position: Math.min(htmlAudio.currentTime || 0, htmlAudio.duration)
-          });
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!audioAnchorCtx) {
+          audioAnchorCtx = new AudioCtx();
+          const osc = audioAnchorCtx.createOscillator();
+          const gain = audioAnchorCtx.createGain();
+          gain.gain.value = 0.00001;
+          osc.connect(gain);
+          gain.connect(audioAnchorCtx.destination);
+          osc.start();
+        }
+        if (audioAnchorCtx.state === 'suspended') {
+          audioAnchorCtx.resume().catch(() => {});
         }
       } catch (e) {}
     }
 
-    async function playTrackById(trackId, contextLabel = null, customQueue = null, resumeOffset = 0) {
-      if (!state.tracks.length) return;
-      const reqId = ++state.playRequestId;
+    function updatePositionState() {
+      if (!('mediaSession' in navigator) || typeof navigator.mediaSession.setPositionState !== 'function') return;
+      const dur = htmlAudio.duration;
+      if (isFinite(dur) && dur > 0) {
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: dur,
+            playbackRate: htmlAudio.playbackRate || 1,
+            position: Math.min(dur, Math.max(0, htmlAudio.currentTime || 0))
+          });
+        } catch (e) {}
+      }
+    }
 
-      if (customQueue && Array.isArray(customQueue) && customQueue.length) {
-        state.queue = [...customQueue];
-      } else if (!state.queue.length) {
+    function updateMediaSession(track) {
+      if (!('mediaSession' in navigator) || !track) return;
+      try {
+        const artworkUrl = generateLockScreenArtworkDataUrl(track);
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: track.title || 'SP MUSIC',
+          artist: track.artist || state.contextLabel || 'Google Drive',
+          album: state.contextLabel || 'SP MUSIC',
+          artwork: artworkUrl ? [{ src: artworkUrl, sizes: '512x512', type: 'image/png' }] : []
+        });
+        navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';
+        navigator.mediaSession.setActionHandler('play', () => togglePlayPause());
+        navigator.mediaSession.setActionHandler('pause', () => togglePlayPause());
+        navigator.mediaSession.setActionHandler('previoustrack', () => prevTrack());
+        navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack());
+        navigator.mediaSession.setActionHandler('seekbackward', details => {
+          const skip = (details && details.seekOffset) || 10;
+          htmlAudio.currentTime = Math.max(0, (htmlAudio.currentTime || 0) - skip);
+          updatePositionState();
+        });
+        navigator.mediaSession.setActionHandler('seekforward', details => {
+          const skip = (details && details.seekOffset) || 10;
+          const dur = htmlAudio.duration || Infinity;
+          htmlAudio.currentTime = Math.min(dur, (htmlAudio.currentTime || 0) + skip);
+          updatePositionState();
+        });
+        navigator.mediaSession.setActionHandler('seekto', details => {
+          if (details && typeof details.seekTime === 'number') {
+            htmlAudio.currentTime = details.seekTime;
+            state.currentTime = details.seekTime;
+            updatePositionState();
+            updateTimelineUI();
+          }
+        });
+      } catch (e) {}
+    }
+
+    async function playTrackById(trackId, contextLabel = null, customQueue = null, resumeOffset = 0) {
+      if (Array.isArray(customQueue) && customQueue.length) {
+        state.queue = customQueue.slice();
+      } else if (!state.queue.length && state.tracks.length) {
         state.queue = state.tracks.map(t => t.id);
       }
 
       const idx = state.queue.indexOf(trackId);
-      state.currentTrackIndex = idx >= 0 ? idx : 0;
-      if (contextLabel) state.contextLabel = contextLabel;
+      if (idx >= 0) {
+        state.currentTrackIndex = idx;
+      } else {
+        const fallbackIdx = state.tracks.findIndex(t => t.id === trackId);
+        if (fallbackIdx < 0) return;
+        state.queue = state.tracks.map(t => t.id);
+        state.currentTrackIndex = fallbackIdx;
+      }
 
+      if (contextLabel) state.contextLabel = contextLabel;
       const track = currentTrack();
       if (!track) return;
 
+      const reqId = ++state.playRequestId;
       ensureAudioSessionAnchor();
-      state.isPlaying = true;
+
       state.currentTime = resumeOffset || 0;
+      state.isPlaying = true;
       updatePlayerUI();
       renderCurrentTab();
 
       const badge = document.getElementById('np-audio-badge');
-      if (badge) badge.textContent = 'Buffering Google Drive...';
+      if (badge) badge.textContent = 'Connecting Stream...';
 
-      // Prefer preloaded Blob URL for instant gapless iOS background playback
-      const cachedUrl = blobCache.get(track.id);
-      htmlAudio.src = cachedUrl || track.streamUrl;
+      const cachedBlob = blobCache.get(track.id);
+      htmlAudio.src = cachedBlob || track.streamUrl;
       htmlAudio.load();
 
       if (resumeOffset > 0) {
-        htmlAudio.addEventListener('loadedmetadata', function onMetaSeek() {
-          htmlAudio.removeEventListener('loadedmetadata', onMetaSeek);
-          if (reqId === state.playRequestId && isFinite(htmlAudio.duration)) {
-            htmlAudio.currentTime = Math.min(resumeOffset, Math.max(0, htmlAudio.duration - 1));
+        const applyOffset = () => {
+          if (isFinite(htmlAudio.duration) && resumeOffset < htmlAudio.duration) {
+            htmlAudio.currentTime = resumeOffset;
           }
-        });
+          htmlAudio.removeEventListener('loadedmetadata', applyOffset);
+        };
+        htmlAudio.addEventListener('loadedmetadata', applyOffset);
       }
 
       try {
-        await playAudioWithTimeout(3800);
+        await playAudioWithTimeout(2600);
         if (reqId !== state.playRequestId) return;
         updateMediaSession(track);
         preloadNextTrackBlob();
@@ -1220,6 +1225,7 @@
         savePlaybackSession();
       } catch (err) {
         if (reqId !== state.playRequestId) return;
+        if (badge) badge.textContent = 'Loading Audio Stream...';
         // Fallback 1: Fetch audio buffer as typed Blob for iOS Safari
         const blobUrl = await fetchTrackBlobUrl(track);
         if (reqId !== state.playRequestId) return;
@@ -1228,7 +1234,7 @@
           htmlAudio.src = blobUrl;
           htmlAudio.load();
           try {
-            await playAudioWithTimeout(4500);
+            await playAudioWithTimeout(4000);
             updateMediaSession(track);
             preloadNextTrackBlob();
             savePlaybackSession();
@@ -1241,7 +1247,7 @@
           htmlAudio.src = track.fallbackUrl;
           htmlAudio.load();
           try {
-            await playAudioWithTimeout(4500);
+            await playAudioWithTimeout(4000);
             updateMediaSession(track);
             preloadNextTrackBlob();
             savePlaybackSession();
@@ -1251,8 +1257,8 @@
 
         state.isPlaying = false;
         updatePlayerUI();
-        if (badge) badge.textContent = 'Tap Play to Retry';
-        showToast('Tap Play again or verify Drive folder sharing');
+        if (badge) badge.textContent = 'Connection Error • Tap Play';
+        showToast('Check Drive sharing ("Anyone with the link") & tap Play');
       }
     }
 
@@ -1686,13 +1692,13 @@
     function switchTab(tabName) {
       state.activeTab = tabName;
       const titles = {
-        listen: 'Listen Now',
+        listen: 'SP MUSIC',
         library: 'Library',
         search: 'Search',
         settings: 'Settings'
       };
       const headerTitle = document.getElementById('header-title');
-      if (headerTitle) headerTitle.textContent = titles[tabName] || 'Aura Music';
+      if (headerTitle) headerTitle.textContent = titles[tabName] || 'SP MUSIC';
 
       document.querySelectorAll('.tab-btn').forEach(btn => {
         const active = btn.dataset.tab === tabName;
@@ -2196,6 +2202,9 @@
     }
 
     window.onload = function () {
+      // Generate SP MUSIC iOS Home Screen & Browser Icon
+      generateAppMusicIcon();
+
       // Restore saved theme preference
       try {
         const savedTheme = localStorage.getItem('aura_theme_mode');
@@ -2206,8 +2215,10 @@
         }
       } catch (e) {}
 
-      // Set formatted date subtitle
+      // Set formatted date subtitle & SP MUSIC title
       const subEl = document.getElementById('header-subtitle');
+      const headerTitle = document.getElementById('header-title');
+      if (headerTitle) headerTitle.textContent = 'SP MUSIC';
       if (subEl) {
         subEl.textContent = new Date().toLocaleDateString('en-US', {
           weekday: 'long',
@@ -2284,3 +2295,4 @@
     };
   </script>
 </body>
+</html>
