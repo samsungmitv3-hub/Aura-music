@@ -17,640 +17,359 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'system-ui', 'sans-serif'],
-          },
-          colors: {
-            ios: {
-              red: '#fa2d48',
-              pink: '#ff375f',
-              darkBg: '#000000',
-              darkCard: '#141416',
-              darkElevated: '#1f1f23',
-              lightBg: '#f2f2f7',
-              lightCard: '#ffffff',
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Google Identity Services (For Uploading Songs to Your Google Drive Folder) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <style>
-    /* Base iOS Reset & Safe Area Variables */
     :root {
       --sat: env(safe-area-inset-top, 0px);
       --sab: env(safe-area-inset-bottom, 0px);
-      --sal: env(safe-area-inset-left, 0px);
-      --sar: env(safe-area-inset-right, 0px);
     }
-
-    * {
-      -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-      box-sizing: border-box;
-    }
-
     html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100vh;
       height: 100dvh;
+      min-height: 100vh;
       overflow: hidden;
-      background-color: #000000;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      overscroll-behavior-y: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
     }
-
-    html:not(.dark), html:not(.dark) body {
-      background-color: #f2f2f7;
-    }
-
-    /* Hide Scrollbars cleanly like iOS */
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-
-    /* Apple Liquid Glass iOS 26 Surfaces */
     .liquid-glass {
-      background: rgba(255, 255, 255, 0.78);
-      backdrop-filter: blur(32px) saturate(190%);
-      -webkit-backdrop-filter: blur(32px) saturate(190%);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.9), 0 12px 32px rgba(0, 0, 0, 0.1);
-    }
-
-    html.dark .liquid-glass {
-      background: linear-gradient(180deg, rgba(44, 44, 50, 0.76) 0%, rgba(22, 22, 26, 0.88) 100%);
-      backdrop-filter: blur(36px) saturate(200%);
-      -webkit-backdrop-filter: blur(36px) saturate(200%);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      box-shadow:
-        inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
-        inset 0 0 20px rgba(255, 255, 255, 0.03),
-        0 18px 40px rgba(0, 0, 0, 0.72);
-    }
-
-    .liquid-glass-header {
-      background: rgba(242, 242, 247, 0.82);
-      backdrop-filter: blur(28px) saturate(180%);
-      -webkit-backdrop-filter: blur(28px) saturate(180%);
-    }
-
-    html.dark .liquid-glass-header {
-      background: rgba(0, 0, 0, 0.76);
+      background: rgba(255, 255, 255, 0.72);
       backdrop-filter: blur(28px) saturate(190%);
       -webkit-backdrop-filter: blur(28px) saturate(190%);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.85);
     }
-
+    .dark .liquid-glass {
+      background: rgba(28, 28, 32, 0.68);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      box-shadow: 0 14px 38px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
     .liquid-pill-btn {
-      background: rgba(0, 0, 0, 0.06);
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease;
+      background: rgba(120, 120, 128, 0.14);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
     }
-    html.dark .liquid-pill-btn {
-      background: rgba(255, 255, 255, 0.09);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    .dark .liquid-pill-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.14);
     }
-    .liquid-pill-btn:active {
-      transform: scale(0.92);
+    #nav-glass-pill {
+      transition: transform 0.36s cubic-bezier(0.22, 1.15, 0.36, 1), opacity 0.2s ease;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(240, 240, 246, 0.78));
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.75);
     }
-
-    /* Custom Range Sliders (iOS Scrubbing & Volume) */
-    input[type="range"].ios-slider {
-      -webkit-appearance: none;
-      appearance: none;
-      background: transparent;
-      cursor: pointer;
+    .dark #nav-glass-pill {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.18);
     }
-    input[type="range"].ios-slider::-webkit-slider-runnable-track {
-      height: 5px;
-      border-radius: 999px;
-    }
-    input[type="range"].ios-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      height: 14px;
-      width: 14px;
-      border-radius: 50%;
-      background: #ffffff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.45);
-      margin-top: -4.5px;
-      transition: transform 0.15s ease;
-    }
-    input[type="range"].ios-slider:active::-webkit-slider-thumb {
-      transform: scale(1.35);
-    }
-
-    /* Playing Equalizer Bars Animation */
-    @keyframes eqBar1 { 0%, 100% { height: 25%; } 50% { height: 95%; } }
-    @keyframes eqBar2 { 0%, 100% { height: 85%; } 50% { height: 30%; } }
-    @keyframes eqBar3 { 0%, 100% { height: 45%; } 50% { height: 100%; } }
-    @keyframes eqBar4 { 0%, 100% { height: 70%; } 50% { height: 20%; } }
-
-    .eq-playing .bar-1 { animation: eqBar1 0.7s ease-in-out infinite; }
-    .eq-playing .bar-2 { animation: eqBar2 0.55s ease-in-out infinite; }
-    .eq-playing .bar-3 { animation: eqBar3 0.8s ease-in-out infinite; }
-    .eq-playing .bar-4 { animation: eqBar4 0.6s ease-in-out infinite; }
-
-    /* Album Art Spring Scale */
-    .artwork-spring {
-      transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.55s ease;
-    }
-
-    /* Full Screen Sheet Transition */
-    .now-playing-sheet {
-      transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1);
-      will-change: transform;
-    }
-
-    /* Ambient Background Orbs */
-    @keyframes floatSlow {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      33% { transform: translate(25px, -30px) scale(1.08); }
-      66% { transform: translate(-20px, 20px) scale(0.95); }
-    }
-    .ambient-orb {
-      animation: floatSlow 14s ease-in-out infinite;
-    }
-
-    /* Vinyl Turntable Disc & Tonearm Animations */
     @keyframes vinylSpin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
-
-    .vinyl-disc-spin {
+    #vinyl-disc {
       animation: vinylSpin 7.5s linear infinite;
       animation-play-state: paused;
     }
-    .vinyl-disc-spin.is-spinning {
+    #vinyl-disc.is-spinning {
       animation-play-state: running;
     }
-
-    .vinyl-grooves {
-      background:
-        radial-gradient(circle at center,
-          transparent 0%,
-          transparent 31%,
-          rgba(255, 255, 255, 0.06) 31.5%,
-          rgba(12, 12, 15, 0.96) 33%,
-          rgba(32, 32, 38, 0.85) 39%,
-          rgba(10, 10, 13, 0.98) 45%,
-          rgba(34, 34, 40, 0.85) 52%,
-          rgba(10, 10, 13, 0.98) 59%,
-          rgba(34, 34, 40, 0.85) 66%,
-          rgba(10, 10, 13, 0.98) 73%,
-          rgba(30, 30, 36, 0.85) 81%,
-          rgba(10, 10, 13, 0.98) 90%,
-          rgba(255, 255, 255, 0.14) 99%,
-          rgba(0, 0, 0, 0.95) 100%
-        );
-    }
-
-    .vinyl-sheen {
-      background: conic-gradient(
-        from 35deg at 50% 50%,
-        transparent 0deg,
-        rgba(255, 255, 255, 0.13) 28deg,
-        transparent 62deg,
-        transparent 180deg,
-        rgba(255, 255, 255, 0.11) 210deg,
-        transparent 245deg,
-        transparent 360deg
-      );
-    }
-
-    .tonearm-pivot {
+    #vinyl-tonearm {
       transform-origin: 84px 24px;
-      transition: transform 0.75s cubic-bezier(0.34, 1.36, 0.64, 1);
-      transform: rotate(-32deg);
+      transform: rotate(-28deg);
+      transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
     }
-    .tonearm-pivot.is-playing {
-      transform: rotate(-7deg);
+    #vinyl-tonearm.is-playing {
+      transform: rotate(0deg);
     }
+    @keyframes eqPulse {
+      0%, 100% { transform: scaleY(0.35); }
+      50% { transform: scaleY(1); }
+    }
+    .eq-playing .bar-1 { animation: eqPulse 0.75s ease-in-out infinite; transform-origin: bottom; }
+    .eq-playing .bar-2 { animation: eqPulse 0.55s ease-in-out infinite 0.15s; transform-origin: bottom; }
+    .eq-playing .bar-3 { animation: eqPulse 0.85s ease-in-out infinite 0.3s; transform-origin: bottom; }
+    .eq-playing .bar-4 { animation: eqPulse 0.65s ease-in-out infinite 0.2s; transform-origin: bottom; }
 
-    /* iOS 26 Liquid Glass Morphing Nav Pill */
-    .liquid-nav-lens {
-      position: absolute;
-      top: 4px;
-      bottom: 4px;
-      left: 4px;
-      width: calc((100% - 8px) / 3);
-      border-radius: 9999px;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(245, 245, 248, 0.72) 100%);
-      border: 1px solid rgba(255, 255, 255, 0.95);
-      box-shadow:
-        inset 0 1px 1px rgba(255, 255, 255, 1),
-        0 4px 14px rgba(0, 0, 0, 0.09),
-        0 1px 3px rgba(250, 45, 72, 0.14);
-      transition: transform 0.44s cubic-bezier(0.32, 1.28, 0.45, 1), filter 0.25s ease;
-      will-change: transform;
-      pointer-events: none;
+    input[type="range"].ios-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 5px;
+      border-radius: 999px;
+      outline: none;
     }
-
-    html.dark .liquid-nav-lens {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
-      border: 1px solid rgba(255, 255, 255, 0.22);
-      box-shadow:
-        inset 0 1px 1px rgba(255, 255, 255, 0.34),
-        inset 0 -1px 2px rgba(0, 0, 0, 0.25),
-        0 6px 18px rgba(0, 0, 0, 0.45);
+    input[type="range"].ios-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
     }
-
-    .liquid-nav-lens.is-gliding {
-      transform: var(--lens-tx, translateX(0%)) scaleX(1.12) scaleY(0.92);
-    }
-
-    .tab-btn {
-      position: relative;
-      z-index: 1;
-      transition: color 0.28s ease, transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .tab-btn:active {
-      transform: scale(0.92);
-    }
-    .tab-btn.is-active .tab-icon {
-      transform: translateY(-1px) scale(1.08);
-    }
-    .tab-icon {
-      transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
-      display: inline-flex;
-    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-ios-lightBg text-zinc-900 dark:bg-black dark:text-white select-none">
+<body class="bg-[#f2f2f7] dark:bg-black text-zinc-900 dark:text-white select-none">
 
-  <!-- Persistent DOM Audio Element for Reliable iOS Background & Lock Screen Playback -->
-  <audio id="ios-bg-audio" playsinline webkit-playsinline preload="auto" class="hidden"></audio>
+  <!-- Persistent iOS Background Audio Element -->
+  <audio id="ios-bg-audio" playsinline webkit-playsinline preload="metadata" crossorigin="anonymous"></audio>
+
+  <!-- Toast Notification -->
+  <div id="ios-toast" class="fixed top-[calc(var(--sat)+14px)] left-1/2 -translate-x-1/2 z-[120] px-4 py-2 rounded-full liquid-glass text-xs font-semibold opacity-0 -translate-y-4 pointer-events-none transition-all duration-300 shadow-xl">
+    <span id="toast-msg">Ready</span>
+  </div>
 
   <!-- Main App Shell -->
-  <div id="app" class="relative w-full h-[100dvh] max-w-2xl mx-auto flex flex-col overflow-hidden bg-ios-lightBg dark:bg-black">
+  <div id="app" class="relative w-full h-[100dvh] flex flex-col max-w-lg mx-auto overflow-hidden">
 
-    <!-- Subtle Ambient Top Glow in Dark Mode -->
-    <div class="pointer-events-none fixed inset-x-0 top-0 h-64 bg-gradient-to-b from-[#fa2d48]/[0.07] via-purple-500/[0.03] to-transparent dark:block hidden"></div>
-
-    <!-- iOS PWA Install Banner (Refined Liquid Glass Pill) -->
-    <div id="ios-pwa-banner" class="hidden z-40 px-4 pt-[calc(var(--sat)+8px)] pb-1">
-      <div class="rounded-2xl px-3.5 py-2.5 bg-gradient-to-r from-[#fa2d48] to-[#ff375f] text-white shadow-lg flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <div class="w-8 h-8 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center shrink-0" id="pwa-banner-icon"></div>
-          <div class="text-xs leading-tight truncate">
-            <p class="font-semibold tracking-tight">Install SP MUSIC on iOS</p>
-            <p class="text-white/90 text-[11px] truncate">Tap Share then <span class="font-semibold">"Add to Home Screen"</span></p>
-          </div>
-        </div>
-        <button onclick="dismissPwaBanner()" class="w-7 h-7 rounded-full bg-black/20 flex items-center justify-center hover:bg-black/30 active:scale-90 transition shrink-0" aria-label="Close install banner">
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Top Sticky Header -->
-    <header id="app-header" class="z-20 px-5 pt-[calc(var(--sat)+12px)] pb-3 flex items-center justify-between border-b border-black/[0.06] dark:border-white/[0.08] liquid-glass-header transition-colors">
+    <!-- Top Header -->
+    <header class="pt-[calc(var(--sat)+12px)] px-5 pb-3 flex items-center justify-between gap-3 shrink-0 z-20">
       <div class="flex items-center gap-3 min-w-0">
-        <div class="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#ff375f] via-[#fa2d48] to-[#c81d38] text-white shadow-[0_6px_16px_rgba(250,45,72,0.38)] ring-1 ring-white/25 flex items-center justify-center shrink-0">
-          <svg class="w-5 h-5 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.5 3.2L9.5 5.1c-.8.17-1.5.88-1.5 1.7v8.45c-.63-.35-1.38-.55-2.2-.55-2.1 0-3.8 1.52-3.8 3.4s1.7 3.4 3.8 3.4 3.8-1.52 3.8-3.4V9.6l7.4-1.56v5.21c-.63-.35-1.38-.55-2.2-.55-2.1 0-3.8 1.52-3.8 3.4s1.7 3.4 3.8 3.4 3.8-1.52 3.8-3.4V4.85c0-.95-.88-1.85-2-1.65z"/>
-          </svg>
+        <div class="w-10 h-10 rounded-[12px] bg-gradient-to-br from-[#ff4f70] via-[#fa2d48] to-[#bf1632] text-white flex items-center justify-center shadow-md shrink-0">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
         </div>
         <div class="min-w-0">
-          <p id="header-subtitle" class="text-[11px] font-semibold uppercase tracking-[0.06em] text-zinc-500 dark:text-zinc-400 mb-0.5">Saturday, Nov 21</p>
-          <h1 id="header-title" class="text-[26px] leading-none font-bold tracking-[-0.025em] text-zinc-900 dark:text-white truncate">SP MUSIC</h1>
+          <p id="header-subtitle" class="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">MONDAY</p>
+          <h1 id="header-title" class="text-2xl font-extrabold tracking-tight leading-tight truncate">SP MUSIC</h1>
         </div>
       </div>
+
       <div class="flex items-center gap-2 shrink-0">
-        <!-- Refresh Google Drive Library Button -->
-        <button onclick="rescanDriveFolder()" id="header-refresh-btn" class="hidden w-9 h-9 rounded-full liquid-pill-btn flex items-center justify-center text-zinc-700 dark:text-white" title="Refresh Google Drive Library">
+        <button id="header-refresh-btn" onclick="rescanDriveFolder()" class="hidden w-9 h-9 rounded-full liquid-pill-btn flex items-center justify-center active:scale-90 transition" title="Sync Drive Folder">
           <span id="icon-header-refresh"></span>
         </button>
-        <!-- Theme Toggle -->
-        <button onclick="toggleTheme()" id="theme-btn" class="w-9 h-9 rounded-full liquid-pill-btn flex items-center justify-center text-zinc-700 dark:text-white" title="Toggle Dark/Light Mode">
-          <span class="hidden dark:inline text-amber-300" id="icon-sun"></span>
-          <span class="inline dark:hidden text-zinc-700" id="icon-moon"></span>
+        <button onclick="toggleTheme()" class="w-9 h-9 rounded-full liquid-pill-btn flex items-center justify-center active:scale-90 transition" title="Toggle Theme">
+          <span id="icon-sun" class="hidden dark:inline"></span>
+          <span id="icon-moon" class="inline dark:hidden"></span>
         </button>
-        <!-- Settings Button -->
-        <button onclick="openSettingsView()" id="header-settings-btn" class="w-9 h-9 rounded-full liquid-pill-btn flex items-center justify-center text-zinc-700 dark:text-white relative" title="Settings & Google Drive Source">
+        <button onclick="openSettingsView()" class="relative w-9 h-9 rounded-full liquid-pill-btn flex items-center justify-center active:scale-90 transition" title="Settings">
           <span id="icon-header-settings"></span>
           <span id="settings-linked-dot" class="hidden absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-white dark:ring-black"></span>
         </button>
       </div>
     </header>
 
-    <!-- Main Scrollable Tab Content Area -->
-    <main id="main-scroll" class="flex-1 overflow-y-auto no-scrollbar px-5 pt-4 pb-[calc(175px+var(--sab))] space-y-6">
-      <!-- Views dynamically injected by JS -->
-    </main>
+    <!-- iOS PWA Install Banner -->
+    <div id="ios-pwa-banner" class="hidden mx-5 mb-2 p-3 rounded-2xl liquid-glass flex items-center justify-between gap-2.5 shrink-0 z-20">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div id="pwa-banner-icon" class="w-8 h-8 rounded-xl bg-[#fa2d48] text-white flex items-center justify-center shrink-0"></div>
+        <div class="min-w-0">
+          <p class="text-xs font-bold truncate">Add SP MUSIC to Home Screen</p>
+          <p class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">For best iOS background audio</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button onclick="openPwaGuideModal()" class="px-2.5 py-1 rounded-full bg-[#fa2d48] text-white text-[11px] font-semibold">How</button>
+        <button onclick="dismissPwaBanner()" class="w-6 h-6 rounded-full bg-black/10 dark:bg-white/10 text-xs flex items-center justify-center">✕</button>
+      </div>
+    </div>
 
-    <!-- Bottom Safe-Area Fade Mask (Prevents scrolled songs from peeking beneath floating bars) -->
-    <div class="pointer-events-none fixed inset-x-0 bottom-0 h-[calc(118px+var(--sab)*0.4)] z-20 max-w-2xl mx-auto bg-gradient-to-t from-ios-lightBg via-ios-lightBg/90 to-transparent dark:from-black dark:via-black/90 dark:to-transparent"></div>
+    <!-- Main Scrollable Content -->
+    <main id="main-scroll" class="flex-1 overflow-y-auto no-scrollbar px-5 pt-1 pb-[calc(155px+var(--sab))] space-y-5"></main>
 
-    <!-- Floating Liquid Glass Mini-Player Capsule (Hidden when no Google Drive folder tracks exist) -->
-    <div id="mini-player-container" class="hidden fixed left-0 right-0 bottom-[calc(54px+var(--sab)*0.35+12px)] z-30 px-4 max-w-2xl mx-auto pointer-events-none">
-      <div id="mini-player" onclick="openNowPlaying()" class="pointer-events-auto relative w-full rounded-[22px] p-2 pr-3 flex items-center justify-between gap-3 liquid-glass cursor-pointer active:scale-[0.985] transition-transform">
-        <!-- Mini Artwork + Title -->
+    <!-- Bottom Safe-Area Gradient Mask -->
+    <div class="pointer-events-none fixed inset-x-0 bottom-0 h-[calc(135px+var(--sab))] bg-gradient-to-t from-[#f2f2f7] via-[#f2f2f7]/90 to-transparent dark:from-black dark:via-black/90 dark:to-transparent z-20"></div>
+
+    <!-- Floating Mini-Player Pill -->
+    <div id="mini-player-container" class="hidden fixed left-1/2 -translate-x-1/2 bottom-[calc(58px+var(--sab)*0.35+12px)] w-[calc(100%-32px)] max-w-[440px] z-30">
+      <div onclick="openNowPlaying()" class="relative overflow-hidden rounded-[22px] liquid-glass px-3 py-2.5 flex items-center justify-between gap-3 cursor-pointer active:scale-[0.99] transition">
         <div class="flex items-center gap-3 min-w-0 flex-1">
-          <div id="mini-art" class="w-11 h-11 rounded-[14px] shrink-0 shadow-md overflow-hidden flex items-center justify-center relative ring-1 ring-white/15">
-            <!-- Dynamic SVG Cover -->
-          </div>
+          <div id="mini-art" class="w-10 h-10 rounded-xl overflow-hidden shrink-0 shadow"></div>
           <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-1.5">
-              <p id="mini-title" class="text-[14px] font-semibold tracking-[-0.01em] text-zinc-900 dark:text-white truncate">No Folder Linked</p>
-            </div>
-            <p id="mini-artist" class="text-[12px] text-zinc-500 dark:text-white/60 truncate">Google Drive</p>
+            <p id="mini-title" class="text-[13px] font-bold truncate">Not Playing</p>
+            <p id="mini-artist" class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">SP MUSIC</p>
           </div>
         </div>
-
-        <!-- Mini Transport Controls -->
-        <div class="flex items-center gap-1 shrink-0" onclick="event.stopPropagation()">
-          <button onclick="togglePlayPause()" id="mini-play-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-zinc-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition" aria-label="Play or Pause">
-          </button>
-          <button onclick="nextTrack()" id="mini-next-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-zinc-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 active:scale-90 transition" aria-label="Next Track">
-          </button>
+        <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
+          <button id="mini-play-btn" onclick="togglePlayPause()" class="w-9 h-9 rounded-full bg-black/[0.06] dark:bg-white/[0.12] flex items-center justify-center active:scale-90 transition" aria-label="Play or Pause"></button>
+          <button id="mini-next-btn" onclick="nextTrack()" class="w-9 h-9 rounded-full hover:bg-black/[0.06] dark:hover:bg-white/[0.12] flex items-center justify-center active:scale-90 transition" aria-label="Next Track"></button>
         </div>
-
-        <!-- Subtle Progress Line Inside Capsule -->
-        <div class="absolute bottom-0 left-4 right-4 h-[2px] bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+        <div class="absolute bottom-0 left-3 right-3 h-[2.5px] bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
           <div id="mini-progress-bar" class="h-full bg-[#fa2d48] w-0 transition-all duration-200"></div>
         </div>
       </div>
     </div>
 
-    <!-- Floating Liquid Glass Bottom Navigation Pill (Compact iOS 26 Capsule) -->
-    <nav class="fixed bottom-[calc(var(--sab)*0.35+6px)] left-0 right-0 z-30 px-4 max-w-2xl mx-auto pointer-events-none flex justify-center">
-      <div id="liquid-nav-capsule" class="pointer-events-auto relative w-full max-w-[310px] rounded-full p-1 liquid-glass grid grid-cols-3 items-center shadow-[0_10px_30px_rgba(0,0,0,0.14)] dark:shadow-[0_14px_34px_rgba(0,0,0,0.75)] overflow-hidden">
-        <!-- Sliding Liquid Glass Lens -->
-        <div id="nav-glass-pill" class="liquid-nav-lens" style="transform: translateX(0%);"></div>
+    <!-- Floating Liquid Glass Bottom Navigation Capsule -->
+    <nav class="fixed left-1/2 -translate-x-1/2 bottom-[calc(var(--sab)*0.35+6px)] w-[calc(100%-48px)] max-w-[300px] z-30">
+      <div class="relative grid grid-cols-3 p-1 rounded-full liquid-glass">
+        <!-- Sliding Morphing Liquid Glass Lens -->
+        <div id="nav-glass-pill" class="absolute top-1 bottom-1 left-1 w-[calc((100%-8px)/3)] rounded-full pointer-events-none"></div>
 
-        <button onclick="switchTab('listen')" data-tab="listen" data-index="0" class="tab-btn is-active py-1.5 px-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-[#fa2d48]">
+        <button onclick="switchTab('listen')" data-tab="listen" class="tab-btn is-active relative z-10 py-1.5 flex flex-col items-center justify-center gap-0.5 text-[#fa2d48] transition">
           <span class="tab-icon" data-icon="listen"></span>
-          <span class="text-[10px] font-semibold tracking-tight leading-none">Listen Now</span>
+          <span class="text-[10px] font-bold tracking-tight">Listen Now</span>
         </button>
-        <button onclick="switchTab('library')" data-tab="library" data-index="1" class="tab-btn py-1.5 px-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 hover:dark:text-white">
+        <button onclick="switchTab('library')" data-tab="library" class="tab-btn relative z-10 py-1.5 flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 transition">
           <span class="tab-icon" data-icon="library"></span>
-          <span class="text-[10px] font-medium tracking-tight leading-none">Library</span>
+          <span class="text-[10px] font-bold tracking-tight">Library</span>
         </button>
-        <button onclick="switchTab('search')" data-tab="search" data-index="2" class="tab-btn py-1.5 px-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 hover:dark:text-white">
+        <button onclick="switchTab('search')" data-tab="search" class="tab-btn relative z-10 py-1.5 flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 transition">
           <span class="tab-icon" data-icon="search"></span>
-          <span class="text-[10px] font-medium tracking-tight leading-none">Search</span>
+          <span class="text-[10px] font-bold tracking-tight">Search</span>
         </button>
       </div>
     </nav>
+  </div>
 
-    <!-- ========================================================= -->
-    <!-- FULL-SCREEN iOS "NOW PLAYING" SHEET                       -->
-    <!-- ========================================================= -->
-    <div id="now-playing-sheet" class="now-playing-sheet fixed inset-x-0 top-0 h-[100dvh] z-50 max-w-2xl mx-auto translate-y-full flex flex-col overflow-hidden bg-zinc-950 text-white">
-      
-      <!-- Dynamic Ambient Album Art Blur Background -->
-      <div id="np-ambient-bg" class="absolute inset-0 pointer-events-none overflow-hidden transition-colors duration-1000">
-        <div id="np-orb-1" class="ambient-orb absolute -top-20 -left-20 w-96 h-96 rounded-full blur-[95px] opacity-65"></div>
-        <div id="np-orb-2" class="ambient-orb absolute top-1/3 -right-24 w-96 h-96 rounded-full blur-[105px] opacity-55" style="animation-delay: -5s;"></div>
-        <div id="np-orb-3" class="ambient-orb absolute -bottom-24 left-10 w-80 h-80 rounded-full blur-[95px] opacity-60" style="animation-delay: -9s;"></div>
-        <div class="absolute inset-0 bg-black/40 backdrop-blur-3xl"></div>
-      </div>
+  <!-- Full-Screen Now Playing Sheet -->
+  <div id="now-playing-sheet" class="fixed inset-x-0 top-0 h-[100dvh] z-50 bg-zinc-950 text-white translate-y-full transition-transform duration-300 ease-out flex flex-col overflow-hidden">
+    <!-- Ambient Dynamic Color Orbs -->
+    <div id="np-orb-1" class="pointer-events-none absolute -top-24 -left-20 w-80 h-80 rounded-full blur-[100px] opacity-45 bg-[#fa2d48]"></div>
+    <div id="np-orb-2" class="pointer-events-none absolute top-1/3 -right-24 w-80 h-80 rounded-full blur-[110px] opacity-35 bg-[#8e44ad]"></div>
+    <div id="np-orb-3" class="pointer-events-none absolute -bottom-24 left-1/4 w-80 h-80 rounded-full blur-[110px] opacity-30 bg-[#0a84ff]"></div>
 
-      <!-- Swipe Down Handle & Top Bar -->
-      <div id="np-drag-header" class="relative z-10 pt-[calc(var(--sat)+10px)] pb-2 px-6 flex flex-col items-center cursor-grab active:cursor-grabbing">
-        <div class="w-10 h-1.5 rounded-full bg-white/30 mb-3"></div>
-        <div class="w-full flex items-center justify-between">
-          <button onclick="closeNowPlaying()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition" aria-label="Collapse Now Playing">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-          <div class="text-center">
-            <p class="text-[10px] uppercase tracking-[0.12em] text-white/55 font-semibold">Playing From</p>
-            <p id="np-context-label" class="text-xs font-semibold text-white/95">Google Drive Folder</p>
-          </div>
-          <button onclick="toggleNpMode('queue')" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition" aria-label="Folder Queue">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          </button>
+    <!-- Sheet Header -->
+    <div id="np-drag-header" class="relative z-10 pt-[calc(var(--sat)+10px)] px-6 pb-2 flex flex-col items-center shrink-0">
+      <div class="w-10 h-1.5 rounded-full bg-white/25 mb-3"></div>
+      <div class="w-full flex items-center justify-between">
+        <button onclick="closeNowPlaying()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center active:scale-90 transition" aria-label="Minimize Player">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="text-center min-w-0 px-3">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-white/45">Playing From</p>
+          <p id="np-context-label" class="text-xs font-bold truncate">Google Drive Folder</p>
         </div>
-      </div>
-
-      <!-- Main Body of Now Playing -->
-      <div class="relative z-10 flex-1 flex flex-col justify-between px-6 pb-[calc(var(--sab)+24px)] overflow-hidden">
-        
-        <!-- VIEW 1: VINYL TURNTABLE PLAYER + RHYTHM GROOVE RING -->
-        <div id="np-artwork-view" class="flex-1 flex flex-col items-center justify-center my-2 min-h-0">
-          <div class="relative w-full max-w-[305px] sm:max-w-[335px] aspect-square flex items-center justify-center">
-            <!-- Outer Rhythm-Reactive Ambient Ring Canvas -->
-            <canvas id="visualizer-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
-
-            <!-- Turntable Platter Base -->
-            <div class="relative w-[84%] h-[84%] rounded-full bg-zinc-950/90 p-2 shadow-[0_28px_65px_rgba(0,0,0,0.82)] ring-1 ring-white/15 flex items-center justify-center">
-              <!-- Spinning Vinyl Record -->
-              <div id="vinyl-disc" class="vinyl-disc-spin relative w-full h-full rounded-full vinyl-grooves shadow-inner flex items-center justify-center overflow-hidden">
-                <!-- Specular Light Reflection Sheen -->
-                <div class="absolute inset-0 vinyl-sheen pointer-events-none"></div>
-
-                <!-- Center Album Artwork Label -->
-                <div id="np-art-wrapper" class="relative w-[42%] h-[42%] rounded-full overflow-hidden ring-2 ring-white/25 shadow-lg">
-                  <!-- Injected Dynamic Album Artwork -->
-                </div>
-
-                <!-- Center Spindle Hole -->
-                <div class="absolute w-3.5 h-3.5 rounded-full bg-zinc-950 ring-2 ring-white/40 shadow-inner z-10"></div>
-              </div>
-            </div>
-
-            <!-- Articulated Tonearm & Stylus -->
-            <div id="vinyl-tonearm" class="tonearm-pivot pointer-events-none absolute -top-1 right-2 w-28 h-48 z-20 drop-shadow-[0_10px_14px_rgba(0,0,0,0.65)]">
-              <svg viewBox="0 0 110 190" class="w-full h-full overflow-visible">
-                <!-- Gimbal Pivot Base -->
-                <circle cx="84" cy="24" r="18" fill="#27272a" stroke="rgba(255,255,255,0.22)" stroke-width="2"/>
-                <circle cx="84" cy="24" r="9" fill="#52525b"/>
-                <circle cx="84" cy="24" r="3.5" fill="#e4e4e7"/>
-                <!-- Counterweight -->
-                <rect x="77" y="2" width="14" height="10" rx="3" fill="#a1a1aa"/>
-                <!-- S-Curved Metallic Arm -->
-                <path d="M 84 24 L 84 88 Q 84 112 64 128 L 42 146" fill="none" stroke="url(#armGrad)" stroke-width="4.5" stroke-linecap="round"/>
-                <!-- Headshell & Cartridge -->
-                <g transform="translate(42, 146) rotate(36)">
-                  <rect x="-5" y="-2" width="10" height="20" rx="2.5" fill="#18181b" stroke="rgba(255,255,255,0.3)" stroke-width="1.2"/>
-                  <circle cx="0" cy="15" r="2" fill="#fa2d48"/>
-                </g>
-                <defs>
-                  <linearGradient id="armGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#f4f4f5"/>
-                    <stop offset="50%" stop-color="#a1a1aa"/>
-                    <stop offset="100%" stop-color="#e4e4e7"/>
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-          </div>
-
-          <p id="vinyl-status-label" class="mt-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/45">
-            33⅓ RPM • Analog Vinyl Mode
-          </p>
-        </div>
-
-        <!-- VIEW 2: SYNCHRONIZED LYRICS -->
-        <div id="np-lyrics-view" class="hidden flex-1 overflow-y-auto no-scrollbar my-3 py-6 px-2 space-y-5">
-          <!-- Populated dynamically -->
-        </div>
-
-        <!-- VIEW 3: UPCOMING QUEUE -->
-        <div id="np-queue-view" class="hidden flex-1 overflow-y-auto no-scrollbar my-3 space-y-2">
-          <div class="flex items-center justify-between pb-2 border-b border-white/10">
-            <h3 class="text-sm font-bold text-white/90">Playing Next</h3>
-            <span id="np-queue-count" class="text-xs text-white/50">0 tracks</span>
-          </div>
-          <div id="np-queue-list" class="space-y-1.5 pt-1"></div>
-        </div>
-
-        <!-- Bottom Controls Area -->
-        <div class="space-y-4 pt-2">
-          <!-- Track Info & Favorite -->
-          <div class="flex items-center justify-between gap-3">
-            <div class="min-w-0 flex-1 pr-1">
-              <h2 id="np-title" class="text-xl sm:text-2xl font-bold tracking-[-0.02em] truncate leading-tight">Google Drive Audio</h2>
-              <p id="np-artist" class="text-[15px] text-white/65 truncate mt-0.5">Google Drive Folder</p>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-              <button onclick="toggleLikeCurrent()" id="np-like-btn" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center active:scale-90 transition" aria-label="Favorite Track">
-              </button>
-            </div>
-          </div>
-
-          <!-- Single Interactive Scrubbable Progress Bar -->
-          <div class="space-y-1.5">
-            <input type="range" id="np-scrubber" min="0" max="100" value="0" step="0.1" class="ios-slider w-full" />
-            <div class="flex justify-between items-center text-[11px] font-medium text-white/60 tabular-nums">
-              <span id="np-current-time">0:00</span>
-              <span id="np-audio-badge" class="px-2.5 py-0.5 rounded-full bg-white/10 text-[10px] font-semibold tracking-wider uppercase text-white/85">Google Drive • MP3</span>
-              <span id="np-remaining-time">-0:00</span>
-            </div>
-          </div>
-
-          <!-- Primary Transport Buttons -->
-          <div class="flex items-center justify-between px-2 py-1">
-            <button onclick="toggleShuffle()" id="np-shuffle-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-white/50 hover:text-white active:scale-90 transition" title="Shuffle">
-            </button>
-
-            <button onclick="prevTrack()" id="np-prev-btn" class="w-12 h-12 rounded-full flex items-center justify-center text-white active:scale-85 transition" title="Previous">
-            </button>
-
-            <button onclick="togglePlayPause()" id="np-play-btn" class="w-16 h-16 rounded-full bg-white text-zinc-950 shadow-xl flex items-center justify-center active:scale-90 transition" title="Play / Pause">
-            </button>
-
-            <button onclick="nextTrack()" id="np-next-btn" class="w-12 h-12 rounded-full flex items-center justify-center text-white active:scale-85 transition" title="Next">
-            </button>
-
-            <button onclick="cycleRepeat()" id="np-repeat-btn" class="w-10 h-10 rounded-full flex items-center justify-center text-white/50 hover:text-white active:scale-90 transition relative" title="Repeat">
-              <span id="np-repeat-icon"></span>
-              <span id="np-repeat-one-dot" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#fa2d48]"></span>
-            </button>
-          </div>
-
-          <!-- Volume Slider -->
-          <div class="flex items-center gap-3 px-1">
-            <svg class="w-3.5 h-3.5 text-white/60 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M11 5L6 9H2v6h4l5 4V5z"/></svg>
-            <input type="range" id="np-volume" min="0" max="1" step="0.01" value="0.85" class="ios-slider flex-1" />
-            <svg class="w-4 h-4 text-white/60 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M11 5L6 9H2v6h4l5 4V5zm4.5 7c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-          </div>
-
-          <!-- Bottom Utility Row: Lyrics, AirPlay, Queue -->
-          <div class="flex items-center justify-between gap-1 pt-1">
-            <button onclick="toggleNpMode('lyrics')" id="btn-mode-lyrics" class="px-3 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap transition">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z"/></svg>
-              <span>Lyrics</span>
-            </button>
-
-            <button onclick="toggleWakeLock()" id="btn-wake-lock" class="px-3 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap transition" title="Keep Screen Awake">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2"/></svg>
-              <span id="wake-lock-label">Awake: Off</span>
-            </button>
-
-            <button onclick="openAirplayModal()" class="px-3 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap transition">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="12 15 17 21 7 21 12 15" fill="currentColor"/></svg>
-              <span id="airplay-label">iPhone</span>
-            </button>
-
-            <button onclick="toggleNpMode('queue')" id="btn-mode-queue" class="px-3 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap transition">
-              <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-              <span>Queue</span>
-            </button>
-          </div>
-        </div>
+        <button onclick="toggleNpMode('queue')" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center active:scale-90 transition" aria-label="Queue">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        </button>
       </div>
     </div>
 
-    <!-- ========================================================= -->
-    <!-- MODALS & ACTION SHEETS                                    -->
-    <!-- ========================================================= -->
+    <!-- Center Stage: Vinyl Turntable / Lyrics / Queue -->
+    <div class="relative z-10 flex-1 flex flex-col items-center justify-center px-6 min-h-0">
+      <!-- Vinyl Turntable View -->
+      <div id="np-artwork-view" class="w-full flex flex-col items-center justify-center">
+        <div class="relative w-[268px] h-[268px] sm:w-[296px] sm:h-[296px] flex items-center justify-center">
+          <!-- Rhythm Ring Canvas -->
+          <canvas id="visualizer-canvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
 
-    <!-- AirPlay / Audio Output Selector Modal -->
-    <div id="airplay-modal" class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="closeModal('airplay-modal')">
-      <div class="w-full max-w-md rounded-3xl liquid-glass p-5 text-white space-y-4" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <svg class="w-5 h-5 text-[#fa2d48]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="12 15 17 21 7 21 12 15" fill="currentColor"/></svg>
-            <h3 class="font-bold text-base">Audio Output</h3>
+          <!-- Spinning Vinyl Disc -->
+          <div id="vinyl-disc" class="relative w-[212px] h-[212px] sm:w-[234px] sm:h-[234px] rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.75)] flex items-center justify-center" style="background: radial-gradient(circle, #18181b 0%, #09090b 48%, #1f1f23 50%, #09090b 52%, #18181b 66%, #09090b 68%, #1c1c20 82%, #09090b 100%); border: 2px solid rgba(255,255,255,0.12);">
+            <div class="absolute inset-0 rounded-full opacity-30" style="background: conic-gradient(from 45deg, transparent 0deg, rgba(255,255,255,0.28) 35deg, transparent 75deg, transparent 180deg, rgba(255,255,255,0.22) 215deg, transparent 255deg);"></div>
+            <!-- Center Album Art Label -->
+            <div id="np-art-wrapper" class="relative w-[92px] h-[92px] sm:w-[102px] sm:h-[102px] rounded-full overflow-hidden ring-4 ring-black/80 shadow-inner"></div>
+            <!-- Spindle Hole -->
+            <div class="absolute w-3.5 h-3.5 rounded-full bg-zinc-950 ring-2 ring-white/30"></div>
           </div>
-          <button onclick="closeModal('airplay-modal')" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
+
+          <!-- Articulated Tonearm Stylus -->
+          <svg id="vinyl-tonearm" class="absolute top-1 right-3 w-28 h-36 pointer-events-none drop-shadow-xl" viewBox="0 0 110 140" fill="none">
+            <circle cx="84" cy="24" r="14" fill="#27272a" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>
+            <circle cx="84" cy="24" r="5" fill="#d4d4d8"/>
+            <path d="M84 24 L76 78 L54 108" stroke="#e4e4e7" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="44" y="103" width="14" height="20" rx="3" transform="rotate(36 44 103)" fill="#18181b" stroke="#a1a1aa" stroke-width="1.5"/>
+            <circle cx="46" cy="118" r="2.2" fill="#fa2d48"/>
+          </svg>
         </div>
-        <div id="airplay-devices" class="space-y-2">
-          <!-- Devices injected dynamically -->
+        <p id="vinyl-status-label" class="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">33⅓ RPM • Paused</p>
+      </div>
+
+      <!-- Lyrics / Info View -->
+      <div id="np-lyrics-view" class="hidden w-full h-full flex flex-col justify-center overflow-y-auto no-scrollbar py-4"></div>
+
+      <!-- Queue View -->
+      <div id="np-queue-view" class="hidden w-full h-full flex flex-col overflow-hidden py-2">
+        <div class="flex items-center justify-between mb-2 px-1">
+          <span class="text-xs font-bold uppercase tracking-wider text-white/60">Up Next</span>
+          <span id="np-queue-count" class="text-xs text-white/45">0 tracks</span>
         </div>
+        <div id="np-queue-list" class="flex-1 overflow-y-auto no-scrollbar space-y-1"></div>
       </div>
     </div>
 
-    <!-- iOS PWA Guide Modal -->
-    <div id="pwa-guide-modal" class="hidden fixed inset-0 z-[60] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="closeModal('pwa-guide-modal')">
-      <div class="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/15 p-6 space-y-4 shadow-2xl" onclick="event.stopPropagation()">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#fa2d48] to-[#ff6b81] text-white flex items-center justify-center shadow" id="guide-logo-icon"></div>
-            <div>
-              <h3 class="font-bold text-base tracking-tight">SP MUSIC for iOS</h3>
-              <p class="text-xs text-zinc-500 dark:text-zinc-400">Google Drive Folder Streaming</p>
-            </div>
-          </div>
-          <button onclick="closeModal('pwa-guide-modal')" class="w-8 h-8 rounded-full bg-zinc-200 dark:bg-white/10 flex items-center justify-center">
-            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
+    <!-- Bottom Controls -->
+    <div class="relative z-10 px-6 pb-[calc(var(--sab)+18px)] pt-2 space-y-4 shrink-0">
+      <!-- Title & Like -->
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <h2 id="np-title" class="text-xl font-bold tracking-tight truncate">Not Playing</h2>
+          <p id="np-artist" class="text-sm text-white/60 truncate">Google Drive</p>
         </div>
-        <div class="space-y-2.5 text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
-          <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
-            <strong class="text-zinc-900 dark:text-white block mb-1">1. Connect Public Google Drive Folder</strong>
-            Set your Google Drive music folder sharing to <strong>"Anyone with the link"</strong>, paste the Folder URL/ID and your Google Drive API v3 Key in <strong>Settings</strong>, and tap <strong>Link & Play Folder</strong>.
-          </p>
-          <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
-            <strong class="text-zinc-900 dark:text-white block mb-1">2. Persistent Sequential Playback</strong>
-            Your folder stays linked in localStorage across reloads—automatically playing sequentially through all audio files until you manually tap <strong>Unlink</strong>.
-          </p>
-          <p class="p-3.5 rounded-2xl bg-zinc-100 dark:bg-white/[0.06]">
-            <strong class="text-zinc-900 dark:text-white block mb-1">3. Install as Native iOS App</strong>
-            Open in <strong>Safari</strong> on iPhone/iPad, tap <strong>Share</strong>, and choose <strong>"Add to Home Screen"</strong>.
-          </p>
+        <button id="np-like-btn" onclick="toggleLikeCurrent()" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/15 flex items-center justify-center shrink-0 active:scale-90 transition" aria-label="Favorite"></button>
+      </div>
+
+      <!-- Scrubber Timeline -->
+      <div class="space-y-1.5">
+        <input id="np-scrubber" type="range" min="0" max="100" step="0.1" value="0" class="ios-slider w-full bg-white/20 cursor-pointer" />
+        <div class="flex items-center justify-between text-[11px] font-semibold text-white/50">
+          <span id="np-current-time">0:00</span>
+          <span id="np-audio-badge" class="px-2.5 py-0.5 rounded-full bg-white/10 text-[10px] font-bold uppercase tracking-wider text-white/75">Google Drive • MP3</span>
+          <span id="np-remaining-time">-0:00</span>
         </div>
       </div>
-    </div>
 
-    <!-- iOS Toast Notification -->
-    <div id="ios-toast" class="fixed top-[calc(var(--sat)+16px)] left-1/2 -translate-x-1/2 z-[70] pointer-events-none opacity-0 -translate-y-4 transition-all duration-300">
-      <div class="px-4 py-2.5 rounded-full liquid-glass text-zinc-900 dark:text-white text-xs font-semibold flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-[#fa2d48]"></span>
-        <span id="toast-msg">Connected to Google Drive</span>
+      <!-- Primary Transport Controls -->
+      <div class="flex items-center justify-between px-2">
+        <button id="np-shuffle-btn" onclick="toggleShuffle()" class="w-10 h-10 rounded-full flex items-center justify-center text-white/50 active:scale-90 transition" aria-label="Shuffle"></button>
+        <button id="np-prev-btn" onclick="prevTrack()" class="w-12 h-12 rounded-full flex items-center justify-center text-white active:scale-90 transition" aria-label="Previous"></button>
+        <button id="np-play-btn" onclick="togglePlayPause()" class="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center shadow-2xl active:scale-90 transition" aria-label="Play or Pause"></button>
+        <button id="np-next-btn" onclick="nextTrack()" class="w-12 h-12 rounded-full flex items-center justify-center text-white active:scale-90 transition" aria-label="Next"></button>
+        <button id="np-repeat-btn" onclick="cycleRepeat()" class="relative w-10 h-10 rounded-full flex items-center justify-center text-white/50 active:scale-90 transition" aria-label="Repeat">
+          <span id="np-repeat-icon"></span>
+          <span id="np-repeat-one-dot" class="hidden absolute bottom-1.5 w-1 h-1 rounded-full bg-[#fa2d48]"></span>
+        </button>
+      </div>
+
+      <!-- Volume Slider -->
+      <div class="flex items-center gap-3">
+        <svg class="w-3.5 h-3.5 text-white/45 shrink-0" viewBox="0 0 24 24" fill="currentColor"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/></svg>
+        <input id="np-volume" type="range" min="0" max="1" step="0.01" value="0.85" class="ios-slider flex-1 bg-white/20 cursor-pointer" />
+        <svg class="w-4 h-4 text-white/45 shrink-0" viewBox="0 0 24 24" fill="currentColor"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+
+      <!-- Bottom Utility Actions -->
+      <div class="grid grid-cols-4 gap-1.5 pt-1">
+        <button onclick="toggleNpMode('lyrics')" class="py-2 px-2 rounded-xl bg-white/8 hover:bg-white/14 text-[11px] font-semibold text-white/75 flex items-center justify-center gap-1 whitespace-nowrap transition">
+          <span>Lyrics</span>
+        </button>
+        <button id="btn-wake-lock" onclick="toggleWakeLock()" class="py-2 px-2 rounded-xl bg-white/8 hover:bg-white/14 text-[11px] font-semibold text-white/75 flex items-center justify-center gap-1 whitespace-nowrap transition">
+          <span id="wake-lock-label">Awake</span>
+        </button>
+        <button onclick="openAirplayModal()" class="py-2 px-2 rounded-xl bg-white/8 hover:bg-white/14 text-[11px] font-semibold text-white/75 flex items-center justify-center gap-1 whitespace-nowrap transition">
+          <span id="airplay-label" class="truncate">iPhone</span>
+        </button>
+        <button onclick="toggleNpMode('queue')" class="py-2 px-2 rounded-xl bg-white/8 hover:bg-white/14 text-[11px] font-semibold text-white/75 flex items-center justify-center gap-1 whitespace-nowrap transition">
+          <span>Queue</span>
+        </button>
       </div>
     </div>
+  </div>
 
+  <!-- AirPlay Output Modal -->
+  <div id="airplay-modal" class="hidden fixed inset-0 z-[90] bg-black/60 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="if(event.target===this) closeModal('airplay-modal')">
+    <div class="w-full max-w-sm rounded-3xl bg-zinc-900 border border-white/15 p-5 text-white space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold">Audio Output</h3>
+        <button onclick="closeModal('airplay-modal')" class="w-7 h-7 rounded-full bg-white/10 text-xs">✕</button>
+      </div>
+      <div id="airplay-devices" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- iOS Home Screen PWA Guide Modal -->
+  <div id="pwa-guide-modal" class="hidden fixed inset-0 z-[95] bg-black/65 backdrop-blur-md flex items-end sm:items-center justify-center p-4" onclick="if(event.target===this) closeModal('pwa-guide-modal')">
+    <div class="w-full max-w-sm rounded-3xl liquid-glass p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div id="guide-logo-icon" class="w-9 h-9 rounded-xl bg-[#fa2d48] text-white flex items-center justify-center"></div>
+          <h3 class="text-base font-bold">iOS Background Setup</h3>
+        </div>
+        <button onclick="closeModal('pwa-guide-modal')" class="w-7 h-7 rounded-full bg-black/10 dark:bg-white/10 text-xs">✕</button>
+      </div>
+      <ol class="text-xs text-zinc-600 dark:text-zinc-300 space-y-2.5 leading-relaxed list-decimal pl-4">
+        <li>Open this page in <strong>Safari</strong> on your iPhone or iPad.</li>
+        <li>Tap the <strong>Share</strong> button at the bottom of Safari.</li>
+        <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+        <li>Launch <strong>SP MUSIC</strong> from your Home Screen for uninterrupted Lock Screen and background audio.</li>
+      </ol>
+      <button onclick="closeModal('pwa-guide-modal')" class="w-full py-2.5 rounded-full bg-[#fa2d48] text-white text-xs font-bold">Done</button>
+    </div>
   </div>
 
   <script>
@@ -680,6 +399,7 @@
       link: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`,
       unlink: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18.84 12.25l1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`,
       refresh: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
+      upload: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
       tabListen: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>`,
       tabLibrary: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 9h-2.5v3.5c0 1.38-1.12 2.5-2.5 2.5S9.5 15.88 9.5 14.5 10.62 12 12 12c.57 0 1.08.19 1.5.51V7h3.5v4z"/></svg>`,
       tabSearch: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.2" y2="16.2"/></svg>`
@@ -723,6 +443,10 @@
       driveConfig: savedDriveConfig,
       isLoadingFolder: false,
       folderError: '',
+      isUploading: false,
+      uploadStatusText: '',
+      oauthAccessToken: '',
+      oauthClientId: (savedDriveConfig && savedDriveConfig.clientId) || '',
       wakeLock: null,
       wakeLockDesired: false,
       playRequestId: 0
@@ -945,6 +669,125 @@
       updatePlayerUI();
       renderCurrentTab();
       showToast('Google Drive folder unlinked');
+    }
+
+    // ----------------------------------------------------------------------------
+    // 2B. GOOGLE DRIVE OAUTH 2.0 & DIRECT SONG UPLOAD INTO LINKED FOLDER
+    // ----------------------------------------------------------------------------
+    function saveOAuthClientId(val) {
+      const trimmed = (val || '').trim();
+      state.oauthClientId = trimmed;
+      if (state.driveConfig) {
+        state.driveConfig.clientId = trimmed;
+        try {
+          localStorage.setItem('aura_drive_folder_cfg', JSON.stringify(state.driveConfig));
+        } catch (e) {}
+      }
+    }
+
+    function requestGoogleUploadToken() {
+      return new Promise((resolve, reject) => {
+        if (state.oauthAccessToken) {
+          resolve(state.oauthAccessToken);
+          return;
+        }
+        const clientId = (state.oauthClientId || '').trim();
+        if (!clientId) {
+          reject(new Error('Enter your Google OAuth 2.0 Web Client ID in Settings first to enable uploads.'));
+          return;
+        }
+        if (!window.google || !google.accounts || !google.accounts.oauth2) {
+          reject(new Error('Google Sign-In SDK is still loading. Please try again in a second.'));
+          return;
+        }
+        const tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: clientId,
+          scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive',
+          callback: response => {
+            if (response && response.access_token) {
+              state.oauthAccessToken = response.access_token;
+              resolve(response.access_token);
+            } else {
+              reject(new Error((response && response.error_description) || 'Google authorization cancelled.'));
+            }
+          }
+        });
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+      });
+    }
+
+    function triggerDriveSongPicker() {
+      if (!state.driveConfig) {
+        openSettingsView();
+        showToast('Connect a Google Drive folder first');
+        return;
+      }
+      if (!state.oauthClientId && !state.oauthAccessToken) {
+        openSettingsView();
+        showToast('Add your Google OAuth Client ID in Settings to upload songs');
+        return;
+      }
+      const input = document.getElementById('drive-song-upload-input');
+      if (input) {
+        input.value = '';
+        input.click();
+      }
+    }
+
+    async function handleUploadSongsToDrive(fileList) {
+      const files = Array.from(fileList || []);
+      if (!files.length || !state.driveConfig) return;
+
+      try {
+        state.isUploading = true;
+        state.uploadStatusText = 'Authorizing Google Drive...';
+        renderCurrentTab();
+
+        const token = await requestGoogleUploadToken();
+        const folderId = state.driveConfig.folderId;
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          state.uploadStatusText = `Uploading (${i + 1}/${files.length}): ${file.name}`;
+          renderCurrentTab();
+
+          const metadata = {
+            name: file.name,
+            parents: [folderId]
+          };
+
+          const form = new FormData();
+          form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+          form.append('file', file, file.name);
+
+          const uploadRes = await fetch(
+            'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name',
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`
+              },
+              body: form
+            }
+          );
+
+          const uploadData = await uploadRes.json();
+          if (!uploadRes.ok) {
+            if (uploadRes.status === 401) state.oauthAccessToken = '';
+            throw new Error((uploadData && uploadData.error && uploadData.error.message) || `Failed to upload ${file.name}`);
+          }
+        }
+
+        state.isUploading = false;
+        state.uploadStatusText = '';
+        showToast(`Uploaded ${files.length} song${files.length > 1 ? 's' : ''} to Google Drive!`);
+        await fetchGoogleDriveFolderSongs(folderId, state.driveConfig.apiKey, true);
+      } catch (err) {
+        state.isUploading = false;
+        state.uploadStatusText = '';
+        renderCurrentTab();
+        showToast(err.message || 'Upload failed');
+      }
     }
 
     // ----------------------------------------------------------------------------
@@ -1909,11 +1752,25 @@
               <h2 class="text-xl font-bold tracking-tight mt-1.5 truncate">${escapeHtml(state.contextLabel)}</h2>
               <p class="text-xs text-zinc-500 dark:text-zinc-400">${state.tracks.length} audio tracks ready for iOS streaming</p>
             </div>
-            <button onclick="rescanDriveFolder()" class="px-3.5 py-2 rounded-full liquid-pill-btn text-xs font-semibold flex items-center gap-1.5 shrink-0">
-              ${ICONS.refresh}
-              <span>Refresh</span>
-            </button>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button onclick="triggerDriveSongPicker()" class="px-3 py-2 rounded-full bg-[#fa2d48]/15 text-[#fa2d48] hover:bg-[#fa2d48]/25 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition">
+                ${ICONS.upload}
+                <span>Add Songs</span>
+              </button>
+              <button onclick="rescanDriveFolder()" class="w-9 h-9 rounded-full liquid-pill-btn text-xs font-semibold flex items-center justify-center" title="Refresh Folder">
+                ${ICONS.refresh}
+              </button>
+            </div>
           </div>
+
+          ${
+            state.isUploading
+              ? `<div class="p-3 rounded-2xl bg-[#fa2d48]/12 border border-[#fa2d48]/30 flex items-center gap-2.5 text-xs font-semibold text-[#fa2d48]">
+                  <div class="w-4 h-4 border-2 border-[#fa2d48] border-t-transparent rounded-full animate-spin shrink-0"></div>
+                  <span class="truncate">${escapeHtml(state.uploadStatusText)}</span>
+                </div>`
+              : ''
+          }
 
           <div class="flex items-center gap-2.5">
             <button onclick="playTrackById('${allIds[0]}', '${escapeHtml(state.contextLabel).replace(/'/g, "\\'")}', ${JSON.stringify(allIds).replace(/"/g, '&quot;')})"
@@ -1978,10 +1835,16 @@
         <section class="space-y-2">
           <div class="flex items-center justify-between px-1">
             <h3 class="text-base font-bold tracking-tight">All Folder Songs</h3>
-            <button onclick="rescanDriveFolder()" class="text-xs font-semibold text-[#fa2d48] flex items-center gap-1">
-              ${ICONS.refresh}
-              <span>Refresh</span>
-            </button>
+            <div class="flex items-center gap-3">
+              <button onclick="triggerDriveSongPicker()" class="text-xs font-semibold text-[#fa2d48] flex items-center gap-1">
+                ${ICONS.upload}
+                <span>Add Songs</span>
+              </button>
+              <button onclick="rescanDriveFolder()" class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                ${ICONS.refresh}
+                <span>Refresh</span>
+              </button>
+            </div>
           </div>
           <div class="space-y-1">
             ${state.tracks.map((tr, i) => renderTrackRow(tr, i, allIds, state.contextLabel)).join('')}
@@ -2063,13 +1926,16 @@
                     </span>
                   </div>
                   <div class="flex items-center gap-2">
+                    <button onclick="triggerDriveSongPicker()" class="flex-1 py-2.5 rounded-xl bg-[#fa2d48] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow active:scale-95 transition">
+                      ${ICONS.upload}
+                      <span>Add Songs</span>
+                    </button>
                     <button onclick="rescanDriveFolder()" class="flex-1 py-2.5 rounded-xl liquid-pill-btn text-xs font-semibold flex items-center justify-center gap-1.5">
                       ${ICONS.refresh}
-                      <span>Sync New Songs</span>
+                      <span>Sync</span>
                     </button>
-                    <button onclick="unlinkDriveFolder()" class="flex-1 py-2.5 rounded-xl bg-red-500/15 text-red-500 hover:bg-red-500/25 text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+                    <button onclick="unlinkDriveFolder()" class="py-2.5 px-3 rounded-xl bg-red-500/15 text-red-500 hover:bg-red-500/25 text-xs font-semibold flex items-center justify-center gap-1 transition" title="Unlink Folder">
                       ${ICONS.unlink}
-                      <span>Unlink Folder</span>
                     </button>
                   </div>
                 </div>`
@@ -2100,6 +1966,31 @@
                   </button>
                 </form>`
           }
+
+          <!-- Google OAuth Client ID for Uploading Songs Directly to Drive -->
+          <div class="pt-3 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-bold tracking-tight">Upload Songs to Google Drive</h3>
+                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Optional OAuth 2.0 Web Client ID to add MP3/M4A files from this app</p>
+              </div>
+              ${
+                state.oauthAccessToken
+                  ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 text-[10px] font-bold">Signed In</span>`
+                  : ''
+              }
+            </div>
+            <input
+              type="text"
+              value="${escapeHtml(state.oauthClientId)}"
+              oninput="saveOAuthClientId(this.value)"
+              placeholder="1234567890-xxxx.apps.googleusercontent.com"
+              class="w-full px-3.5 py-2.5 rounded-2xl bg-black/[0.05] dark:bg-white/[0.07] text-xs outline-none focus:ring-2 focus:ring-[#fa2d48]"
+            />
+            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              In Google Cloud Console → <strong>Credentials</strong> → <strong>Create OAuth client ID (Web application)</strong>, add your app URL to <em>Authorized JavaScript origins</em>, and paste the Client ID above.
+            </p>
+          </div>
         </section>
       `;
     }
@@ -2286,6 +2177,16 @@
     window.onload = function () {
       // Generate SP MUSIC iOS Home Screen & Browser Icon
       generateAppMusicIcon();
+
+      // Create hidden multi-audio file picker for uploading songs into Google Drive
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.id = 'drive-song-upload-input';
+      fileInput.accept = 'audio/*,.mp3,.m4a,.wav,.flac,.ogg,.aac';
+      fileInput.multiple = true;
+      fileInput.className = 'hidden';
+      fileInput.addEventListener('change', e => handleUploadSongsToDrive(e.target.files));
+      document.body.appendChild(fileInput);
 
       // Restore saved theme preference
       try {
