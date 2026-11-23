@@ -308,10 +308,10 @@
     </main>
 
     <!-- Bottom Safe-Area Fade Mask (Prevents scrolled songs from peeking beneath floating bars) -->
-    <div class="pointer-events-none fixed inset-x-0 bottom-0 h-[calc(132px+var(--sab))] z-20 max-w-2xl mx-auto bg-gradient-to-t from-ios-lightBg via-ios-lightBg/90 to-transparent dark:from-black dark:via-black/90 dark:to-transparent"></div>
+    <div class="pointer-events-none fixed inset-x-0 bottom-0 h-[calc(118px+var(--sab)*0.4)] z-20 max-w-2xl mx-auto bg-gradient-to-t from-ios-lightBg via-ios-lightBg/90 to-transparent dark:from-black dark:via-black/90 dark:to-transparent"></div>
 
     <!-- Floating Liquid Glass Mini-Player Capsule (Hidden when no Google Drive folder tracks exist) -->
-    <div id="mini-player-container" class="hidden fixed left-0 right-0 bottom-[calc(58px+var(--sab)+6px)] z-30 px-4 max-w-2xl mx-auto pointer-events-none">
+    <div id="mini-player-container" class="hidden fixed left-0 right-0 bottom-[calc(54px+var(--sab)*0.35+12px)] z-30 px-4 max-w-2xl mx-auto pointer-events-none">
       <div id="mini-player" onclick="openNowPlaying()" class="pointer-events-auto relative w-full rounded-[22px] p-2 pr-3 flex items-center justify-between gap-3 liquid-glass cursor-pointer active:scale-[0.985] transition-transform">
         <!-- Mini Artwork + Title -->
         <div class="flex items-center gap-3 min-w-0 flex-1">
@@ -342,7 +342,7 @@
     </div>
 
     <!-- Floating Liquid Glass Bottom Navigation Pill (Compact iOS 26 Capsule) -->
-    <nav class="fixed bottom-[calc(var(--sab)+2px)] left-0 right-0 z-30 px-4 max-w-2xl mx-auto pointer-events-none flex justify-center">
+    <nav class="fixed bottom-[calc(var(--sab)*0.35+6px)] left-0 right-0 z-30 px-4 max-w-2xl mx-auto pointer-events-none flex justify-center">
       <div class="pointer-events-auto w-full max-w-[310px] rounded-full p-1 liquid-glass grid grid-cols-3 gap-1 items-center shadow-[0_10px_30px_rgba(0,0,0,0.14)] dark:shadow-[0_14px_34px_rgba(0,0,0,0.75)]">
         <button onclick="switchTab('listen')" data-tab="listen" class="tab-btn py-1.5 px-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-[#fa2d48] bg-black/[0.06] dark:bg-white/[0.12] transition-all duration-200">
           <span class="tab-icon" data-icon="listen"></span>
