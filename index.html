@@ -242,6 +242,54 @@
     .tonearm-pivot.is-playing {
       transform: rotate(-7deg);
     }
+
+    /* iOS 26 Liquid Glass Morphing Nav Pill */
+    .liquid-nav-lens {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      left: 4px;
+      width: calc((100% - 8px) / 3);
+      border-radius: 9999px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(245, 245, 248, 0.72) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 1),
+        0 4px 14px rgba(0, 0, 0, 0.09),
+        0 1px 3px rgba(250, 45, 72, 0.14);
+      transition: transform 0.44s cubic-bezier(0.32, 1.28, 0.45, 1), filter 0.25s ease;
+      will-change: transform;
+      pointer-events: none;
+    }
+
+    html.dark .liquid-nav-lens {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.08) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      box-shadow:
+        inset 0 1px 1px rgba(255, 255, 255, 0.34),
+        inset 0 -1px 2px rgba(0, 0, 0, 0.25),
+        0 6px 18px rgba(0, 0, 0, 0.45);
+    }
+
+    .liquid-nav-lens.is-gliding {
+      transform: var(--lens-tx, translateX(0%)) scaleX(1.12) scaleY(0.92);
+    }
+
+    .tab-btn {
+      position: relative;
+      z-index: 1;
+      transition: color 0.28s ease, transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .tab-btn:active {
+      transform: scale(0.92);
+    }
+    .tab-btn.is-active .tab-icon {
+      transform: translateY(-1px) scale(1.08);
+    }
+    .tab-icon {
+      transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: inline-flex;
+    }
   </style>
 </head>
 <body class="bg-ios-lightBg text-zinc-900 dark:bg-black dark:text-white select-none">
@@ -343,16 +391,19 @@
 
     <!-- Floating Liquid Glass Bottom Navigation Pill (Compact iOS 26 Capsule) -->
     <nav class="fixed bottom-[calc(var(--sab)*0.35+6px)] left-0 right-0 z-30 px-4 max-w-2xl mx-auto pointer-events-none flex justify-center">
-      <div class="pointer-events-auto w-full max-w-[310px] rounded-full p-1 liquid-glass grid grid-cols-3 gap-1 items-center shadow-[0_10px_30px_rgba(0,0,0,0.14)] dark:shadow-[0_14px_34px_rgba(0,0,0,0.75)]">
-        <button onclick="switchTab('listen')" data-tab="listen" class="tab-btn py-1.5 px-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-[#fa2d48] bg-black/[0.06] dark:bg-white/[0.12] transition-all duration-200">
+      <div id="liquid-nav-capsule" class="pointer-events-auto relative w-full max-w-[310px] rounded-full p-1 liquid-glass grid grid-cols-3 items-center shadow-[0_10px_30px_rgba(0,0,0,0.14)] dark:shadow-[0_14px_34px_rgba(0,0,0,0.75)] overflow-hidden">
+        <!-- Sliding Liquid Glass Lens -->
+        <div id="nav-glass-pill" class="liquid-nav-lens" style="transform: translateX(0%);"></div>
+
+        <button onclick="switchTab('listen')" data-tab="listen" data-index="0" class="tab-btn is-active py-1.5 px-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-[#fa2d48]">
           <span class="tab-icon" data-icon="listen"></span>
           <span class="text-[10px] font-semibold tracking-tight leading-none">Listen Now</span>
         </button>
-        <button onclick="switchTab('library')" data-tab="library" class="tab-btn py-1.5 px-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 hover:dark:text-white transition-all duration-200">
+        <button onclick="switchTab('library')" data-tab="library" data-index="1" class="tab-btn py-1.5 px-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 hover:dark:text-white">
           <span class="tab-icon" data-icon="library"></span>
           <span class="text-[10px] font-medium tracking-tight leading-none">Library</span>
         </button>
-        <button onclick="switchTab('search')" data-tab="search" class="tab-btn py-1.5 px-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 hover:dark:text-white transition-all duration-200">
+        <button onclick="switchTab('search')" data-tab="search" data-index="2" class="tab-btn py-1.5 px-2 rounded-full flex flex-col items-center justify-center gap-0.5 text-zinc-500 dark:text-white/60 hover:dark:text-white">
           <span class="tab-icon" data-icon="search"></span>
           <span class="text-[10px] font-medium tracking-tight leading-none">Search</span>
         </button>
@@ -1708,14 +1759,34 @@
         search: 'Search',
         settings: 'Settings'
       };
+      const tabIndexMap = { listen: 0, library: 1, search: 2 };
       const headerTitle = document.getElementById('header-title');
       if (headerTitle) headerTitle.textContent = titles[tabName] || 'SP MUSIC';
 
+      // Animate sliding Liquid Glass lens
+      const glassPill = document.getElementById('nav-glass-pill');
+      if (glassPill) {
+        if (tabName in tabIndexMap) {
+          const idx = tabIndexMap[tabName];
+          const tx = `translateX(${idx * 100}%)`;
+          glassPill.style.opacity = '1';
+          glassPill.style.setProperty('--lens-tx', tx);
+          glassPill.classList.add('is-gliding');
+          glassPill.style.transform = `${tx} scaleX(1.12) scaleY(0.92)`;
+          clearTimeout(glassPill._glideTimer);
+          glassPill._glideTimer = setTimeout(() => {
+            glassPill.classList.remove('is-gliding');
+            glassPill.style.transform = tx;
+          }, 190);
+        } else {
+          glassPill.style.opacity = '0';
+        }
+      }
+
       document.querySelectorAll('.tab-btn').forEach(btn => {
         const active = btn.dataset.tab === tabName;
+        btn.classList.toggle('is-active', active);
         btn.classList.toggle('text-[#fa2d48]', active);
-        btn.classList.toggle('bg-black/[0.06]', active);
-        btn.classList.toggle('dark:bg-white/[0.12]', active);
         btn.classList.toggle('text-zinc-500', !active);
         btn.classList.toggle('dark:text-white/60', !active);
       });
