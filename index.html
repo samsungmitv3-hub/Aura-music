@@ -400,6 +400,9 @@
       unlink: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18.84 12.25l1.72-1.71a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5 5 0 0 0 7.07 7.07l1.71-1.71"/><line x1="2" y1="2" x2="22" y2="22"/></svg>`,
       refresh: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
       upload: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`,
+      folder: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>`,
+      album: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z"/></svg>`,
+      chevronLeft: `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`,
       tabListen: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>`,
       tabLibrary: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-3 9h-2.5v3.5c0 1.38-1.12 2.5-2.5 2.5S9.5 15.88 9.5 14.5 10.62 12 12 12c.57 0 1.08.19 1.5.51V7h3.5v4z"/></svg>`,
       tabSearch: `<svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.2" y2="16.2"/></svg>`
@@ -437,6 +440,8 @@
       repeat: (savedSession && savedSession.repeat) || 'all',
       likedIds: new Set(savedLikedIds),
       searchQuery: '',
+      libraryFilter: 'songs',
+      selectedCollection: null,
       npMode: 'artwork',
       contextLabel: (savedDriveConfig && savedDriveConfig.folderName) || 'Google Drive Folder',
       airplayDevice: 'iPhone',
@@ -491,13 +496,15 @@
       const hasFolder = !!state.driveConfig;
       const refreshBtn = document.getElementById('header-refresh-btn');
       const linkedDot = document.getElementById('settings-linked-dot');
-      if (refreshBtn) refreshBtn.classList.toggle('hidden', !hasFolder);
-      if (linkedDot) linkedDot.classList.toggle('hidden', !hasFolder);
+      if (refreshBtn) {
+        refreshBtn.classList.toggle('hidden', !hasFolder);
+        refreshBtn.classList.toggle('animate-spin', !!state.isLoadingFolder);
+      }
+      if (linkedDot) {
+        linkedDot.classList.toggle('hidden', !hasFolder);
+      }
     }
 
-    // ----------------------------------------------------------------------------
-    // 2. GOOGLE DRIVE API v3 FOLDER SCANNER & NON-INTERRUPTIVE REFRESH
-    // ----------------------------------------------------------------------------
     function inferAudioMimeType(fileName, apiMimeType) {
       if (apiMimeType && apiMimeType.startsWith('audio/')) return apiMimeType;
       const ext = ((fileName || '').split('.').pop() || '').toLowerCase();
@@ -513,57 +520,94 @@
       return map[ext] || 'audio/mpeg';
     }
 
+    // ----------------------------------------------------------------------------
+    // 2. GOOGLE DRIVE FOLDER SCANNER (RECURSIVE SUBFOLDERS & ALBUMS)
+    // ----------------------------------------------------------------------------
     async function fetchGoogleDriveFolderSongs(folderId, apiKey, silentRefresh = false) {
       state.isLoadingFolder = true;
       state.folderError = '';
       updateHeaderSyncButtons();
-      renderCurrentTab();
+      if (!silentRefresh) renderCurrentTab();
 
-      const cb = Date.now();
       try {
-        // Fetch Folder Metadata Name
+        const cb = Date.now();
         let folderName = (state.driveConfig && state.driveConfig.folderName) || 'Google Drive Folder';
         try {
-          const metaRes = await fetch(
-            `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}?fields=name&supportsAllDrives=true&key=${encodeURIComponent(apiKey)}&_cb=${cb}`
-          );
+          const metaUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}?fields=id,name&supportsAllDrives=true&key=${encodeURIComponent(apiKey)}&_cb=${cb}`;
+          const metaRes = await fetch(metaUrl);
           if (metaRes.ok) {
-            const meta = await metaRes.json();
-            if (meta && meta.name) folderName = meta.name;
+            const metaData = await metaRes.json();
+            if (metaData && metaData.name) folderName = metaData.name;
           }
         } catch (e) {}
 
-        // Query all audio files inside folder
-        const q = encodeURIComponent(`'${folderId}' in parents and trashed = false`);
-        const fields = encodeURIComponent('files(id,name,mimeType,size)');
-        const listUrl = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=500&orderBy=name&includeItemsFromAllDrives=true&supportsAllDrives=true&key=${encodeURIComponent(apiKey)}&_cb=${cb}`;
-        const res = await fetch(listUrl);
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error((data && data.error && data.error.message) || 'Failed to read Google Drive folder.');
-        }
-
+        // Query all audio files and nested subfolders inside root folder
         const audioExtRegex = /\.(mp3|m4a|wav|flac|ogg|aac|opus)$/i;
-        const files = (data.files || []).filter(f =>
-          (f.mimeType && f.mimeType.startsWith('audio/')) || audioExtRegex.test(f.name || '')
-        );
+        const fields = encodeURIComponent('files(id,name,mimeType,size)');
 
-        if (!files.length) {
+        const listChildren = async parentId => {
+          const q = encodeURIComponent(`'${parentId}' in parents and trashed = false`);
+          const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=500&orderBy=name&includeItemsFromAllDrives=true&supportsAllDrives=true&key=${encodeURIComponent(apiKey)}&_cb=${cb}`;
+          const r = await fetch(url);
+          const d = await r.json();
+          if (!r.ok) {
+            throw new Error((d && d.error && d.error.message) || 'Failed to read Google Drive folder.');
+          }
+          return d.files || [];
+        };
+
+        const collectedFiles = [];
+        const scanFolderRecursive = async (currentFolderId, currentFolderName, depth = 0) => {
+          const items = await listChildren(currentFolderId);
+          items.forEach(item => {
+            if ((item.mimeType && item.mimeType.startsWith('audio/')) || audioExtRegex.test(item.name || '')) {
+              collectedFiles.push({ file: item, folderTitle: currentFolderName, parentFolderId: currentFolderId });
+            }
+          });
+          if (depth < 3) {
+            const subfolders = items.filter(item => item.mimeType === 'application/vnd.google-apps.folder');
+            if (subfolders.length) {
+              await Promise.all(
+                subfolders.map(sf => scanFolderRecursive(sf.id, sf.name || currentFolderName, depth + 1).catch(() => {}))
+              );
+            }
+          }
+        };
+
+        await scanFolderRecursive(folderId, folderName, 0);
+
+        if (!collectedFiles.length) {
           throw new Error('No audio files (.mp3, .m4a, .wav, .flac, .ogg) found in this Google Drive folder.');
         }
 
-        const newTracks = files.map((file, index) => {
+        const inferAlbumName = (cleanTitle, folderTitle) => {
+          if (folderTitle && folderTitle !== folderName) return folderTitle;
+          const parts = cleanTitle
+            .split(/\s+-\s+/)
+            .map(p => p.trim())
+            .filter(p => p && !/(masstamilan|starmusiq|isaimini|tamilwire|128kbps|320kbps)/i.test(p));
+          if (parts.length >= 2) {
+            const candidate = parts[parts.length - 1].replace(/^\d+\s*/, '').trim();
+            if (candidate.length >= 2) return candidate;
+          }
+          return folderTitle || folderName;
+        };
+
+        const newTracks = collectedFiles.map(({ file, folderTitle, parentFolderId }, index) => {
           const palette = COVER_PALETTES[index % COVER_PALETTES.length];
           const cleanTitle = (file.name || 'Untitled').replace(/\.[^/.]+$/, '');
           const extMatch = (file.name || '').match(/\.([a-zA-Z0-9]+)$/);
           const format = extMatch ? extMatch[1].toUpperCase() : 'MP3';
+          const albumName = inferAlbumName(cleanTitle, folderTitle);
 
           return {
             id: `gdrive-${file.id}`,
             driveFileId: file.id,
             title: cleanTitle,
-            artist: folderName,
+            artist: folderTitle,
+            folderName: folderTitle,
+            parentFolderId,
+            album: albumName,
             format,
             mimeType: inferAudioMimeType(file.name, file.mimeType),
             colors: palette.colors,
@@ -1045,21 +1089,22 @@
           artwork: artworkUrl ? [{ src: artworkUrl, sizes: '512x512', type: 'image/png' }] : []
         });
         navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';
+
+        // Register Play/Pause
         navigator.mediaSession.setActionHandler('play', () => togglePlayPause());
         navigator.mediaSession.setActionHandler('pause', () => togglePlayPause());
+
+        // On iOS, registering seekbackward/seekforward hides Previous/Next track buttons
+        // and replaces them with 10s/15s skip icons. Explicitly null them so iOS shows
+        // dedicated Previous Track and Next Track controls on the Lock Screen.
+        try {
+          navigator.mediaSession.setActionHandler('seekbackward', null);
+          navigator.mediaSession.setActionHandler('seekforward', null);
+        } catch (e) {}
+
         navigator.mediaSession.setActionHandler('previoustrack', () => prevTrack());
         navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack());
-        navigator.mediaSession.setActionHandler('seekbackward', details => {
-          const skip = (details && details.seekOffset) || 10;
-          htmlAudio.currentTime = Math.max(0, (htmlAudio.currentTime || 0) - skip);
-          updatePositionState();
-        });
-        navigator.mediaSession.setActionHandler('seekforward', details => {
-          const skip = (details && details.seekOffset) || 10;
-          const dur = htmlAudio.duration || Infinity;
-          htmlAudio.currentTime = Math.min(dur, (htmlAudio.currentTime || 0) + skip);
-          updatePositionState();
-        });
+
         navigator.mediaSession.setActionHandler('seekto', details => {
           if (details && typeof details.seekTime === 'number') {
             htmlAudio.currentTime = details.seekTime;
@@ -1106,6 +1151,9 @@
       const cachedBlob = blobCache.get(track.id);
       htmlAudio.src = cachedBlob || track.streamUrl;
       htmlAudio.load();
+
+      // Update Lock Screen metadata & Next/Prev handlers immediately on track switch
+      updateMediaSession(track);
 
       if (resumeOffset > 0) {
         const applyOffset = () => {
@@ -1293,7 +1341,7 @@
       const tr = currentTrack();
       const badge = document.getElementById('np-audio-badge');
       if (badge && tr) badge.textContent = `Google Drive • ${tr.format || 'MP3'}`;
-      if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+      if (tr) updateMediaSession(tr);
       updatePositionState();
       updatePlayerUI();
     });
@@ -1311,6 +1359,7 @@
       if (tr && isFinite(htmlAudio.duration) && htmlAudio.duration > 0) {
         tr.duration = htmlAudio.duration;
       }
+      if (tr) updateMediaSession(tr);
       updatePositionState();
       updatePlayerUI();
     });
@@ -1740,6 +1789,8 @@
 
       const allIds = state.tracks.map(t => t.id);
       const active = currentTrack();
+      const folderGroups = getGroupedCollections('folder');
+      const albumGroups = getGroupedCollections('album');
 
       container.innerHTML = `
         <!-- Hero Google Drive Folder Banner -->
@@ -1785,6 +1836,25 @@
             </button>
           </div>
 
+          <div class="grid grid-cols-2 gap-2.5">
+            <button onclick="state.libraryFilter = 'folders'; state.selectedCollection = null; switchTab('library');"
+              class="py-2.5 px-3.5 rounded-2xl liquid-pill-btn text-xs font-bold flex items-center justify-between active:scale-[0.98] transition">
+              <span class="flex items-center gap-2">
+                <span class="text-[#fa2d48]">${ICONS.folder}</span>
+                <span>Folders</span>
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-black/10 dark:bg-white/10 text-[11px]">${folderGroups.length}</span>
+            </button>
+            <button onclick="state.libraryFilter = 'albums'; state.selectedCollection = null; switchTab('library');"
+              class="py-2.5 px-3.5 rounded-2xl liquid-pill-btn text-xs font-bold flex items-center justify-between active:scale-[0.98] transition">
+              <span class="flex items-center gap-2">
+                <span class="text-[#fa2d48]">${ICONS.album}</span>
+                <span>Albums</span>
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-black/10 dark:bg-white/10 text-[11px]">${albumGroups.length}</span>
+            </button>
+          </div>
+
           ${
             active && !state.isPlaying && state.currentTime > 2
               ? `<button onclick="togglePlayPause()" class="w-full py-2.5 px-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-xs font-semibold flex items-center justify-between transition">
@@ -1794,6 +1864,43 @@
               : ''
           }
         </section>
+
+        ${
+          folderGroups.length > 0 || albumGroups.length > 0
+            ? `<section class="space-y-2.5">
+                <div class="flex items-center justify-between px-1">
+                  <h3 class="text-base font-bold tracking-tight">Folders & Albums</h3>
+                  <button onclick="state.libraryFilter = '${folderGroups.length > 1 ? 'folders' : 'albums'}'; state.selectedCollection = null; switchTab('library');" class="text-xs font-semibold text-[#fa2d48]">
+                    Browse All →
+                  </button>
+                </div>
+                <div class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+                  ${(folderGroups.length > 1 ? folderGroups : albumGroups)
+                    .slice(0, 10)
+                    .map(grp => {
+                      const idsJson = JSON.stringify(grp.trackIds).replace(/"/g, '&quot;');
+                      const safeName = escapeHtml(grp.name).replace(/'/g, "\\'");
+                      const filterTarget = folderGroups.length > 1 ? 'folders' : 'albums';
+                      return `
+                        <div onclick="openLibraryCollection('${filterTarget}', '${safeName}')" class="w-36 shrink-0 rounded-2xl liquid-glass p-2.5 space-y-2 cursor-pointer active:scale-[0.98] transition">
+                          <div class="relative w-full aspect-square rounded-xl overflow-hidden shadow">
+                            ${renderAlbumArtwork(grp.coverTrack, 'w-full h-full')}
+                            <button onclick="event.stopPropagation(); playTrackById('${grp.trackIds[0]}', '${safeName}', ${idsJson})" class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/65 backdrop-blur-md text-white flex items-center justify-center shadow-lg active:scale-90 transition" aria-label="Play ${escapeHtml(grp.name)}">
+                              ${ICONS.play}
+                            </button>
+                          </div>
+                          <div class="min-w-0">
+                            <p class="text-xs font-bold truncate">${escapeHtml(grp.name)}</p>
+                            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">${grp.tracks.length} ${grp.tracks.length === 1 ? 'song' : 'songs'}</p>
+                          </div>
+                        </div>
+                      `;
+                    })
+                    .join('')}
+                </div>
+              </section>`
+            : ''
+        }
 
         <!-- Track List -->
         <section class="space-y-2">
@@ -1808,6 +1915,41 @@
       `;
     }
 
+    function getGroupedCollections(type) {
+      const map = new Map();
+      state.tracks.forEach(tr => {
+        const key = type === 'folder' ? (tr.folderName || state.contextLabel) : (tr.album || tr.folderName || state.contextLabel);
+        if (!map.has(key)) {
+          map.set(key, {
+            name: key,
+            tracks: [],
+            trackIds: [],
+            coverTrack: tr
+          });
+        }
+        const entry = map.get(key);
+        entry.tracks.push(tr);
+        entry.trackIds.push(tr.id);
+      });
+      return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    function setLibraryFilter(filter) {
+      state.libraryFilter = filter;
+      state.selectedCollection = null;
+      renderCurrentTab();
+    }
+
+    function openLibraryCollection(filterType, collectionName) {
+      state.libraryFilter = filterType;
+      state.selectedCollection = collectionName;
+      if (state.activeTab !== 'library') {
+        switchTab('library');
+      } else {
+        renderCurrentTab();
+      }
+    }
+
     function renderLibrary(container) {
       if (!state.driveConfig || !state.tracks.length) {
         container.innerHTML = renderEmptyFolderPrompt();
@@ -1816,22 +1958,187 @@
 
       const favTracks = state.tracks.filter(t => state.likedIds.has(t.id));
       const allIds = state.tracks.map(t => t.id);
+      const folders = getGroupedCollections('folder');
+      const albums = getGroupedCollections('album');
+      const activeFilter = state.libraryFilter || 'songs';
 
-      container.innerHTML = `
-        ${
-          favTracks.length
-            ? `<section class="space-y-2">
-                <div class="flex items-center justify-between px-1">
-                  <h3 class="text-base font-bold tracking-tight">Favorites</h3>
-                  <span class="text-xs text-[#fa2d48] font-semibold">${favTracks.length} liked</span>
+      const pills = [
+        { id: 'songs', label: 'All Songs', count: state.tracks.length },
+        { id: 'folders', label: 'Folders', count: folders.length },
+        { id: 'albums', label: 'Albums', count: albums.length },
+        { id: 'favorites', label: 'Favorites', count: favTracks.length }
+      ];
+
+      const filterBarHtml = `
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+          ${pills
+            .map(p => {
+              const isActive = activeFilter === p.id;
+              return `
+                <button onclick="setLibraryFilter('${p.id}')" class="px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 ${
+                  isActive
+                    ? 'bg-[#fa2d48] text-white shadow-md'
+                    : 'liquid-pill-btn text-zinc-700 dark:text-white/80'
+                }">
+                  <span>${p.label}</span>
+                  <span class="text-[10px] opacity-80">${p.count}</span>
+                </button>
+              `;
+            })
+            .join('')}
+        </div>
+      `;
+
+      // Drill-down detail view for a selected Folder or Album
+      if ((activeFilter === 'folders' || activeFilter === 'albums') && state.selectedCollection) {
+        const groups = activeFilter === 'folders' ? folders : albums;
+        const group = groups.find(g => g.name === state.selectedCollection);
+        if (group) {
+          const idsJson = JSON.stringify(group.trackIds).replace(/"/g, '&quot;');
+          const safeName = escapeHtml(group.name).replace(/'/g, "\\'");
+          container.innerHTML = `
+            ${filterBarHtml}
+            <section class="rounded-3xl liquid-glass p-4 space-y-3.5">
+              <button onclick="state.selectedCollection = null; renderCurrentTab();" class="inline-flex items-center gap-1 text-xs font-bold text-[#fa2d48]">
+                ${ICONS.chevronLeft}
+                <span>Back to ${activeFilter === 'folders' ? 'Folders' : 'Albums'}</span>
+              </button>
+              <div class="flex items-center gap-3.5">
+                <div class="w-16 h-16 rounded-2xl overflow-hidden shadow-lg shrink-0">
+                  ${renderAlbumArtwork(group.coverTrack, 'w-full h-full')}
                 </div>
-                <div class="space-y-1">
-                  ${favTracks.map((tr, i) => renderTrackRow(tr, i, favTracks.map(f => f.id), 'Favorites')).join('')}
+                <div class="min-w-0 flex-1">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">${activeFilter === 'folders' ? 'Drive Folder' : 'Album'}</span>
+                  <h2 class="text-lg font-extrabold tracking-tight truncate">${escapeHtml(group.name)}</h2>
+                  <p class="text-xs text-zinc-500 dark:text-zinc-400">${group.tracks.length} ${group.tracks.length === 1 ? 'song' : 'songs'}</p>
                 </div>
-              </section>`
-            : ''
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="playTrackById('${group.trackIds[0]}', '${safeName}', ${idsJson})" class="flex-1 py-2.5 rounded-2xl bg-[#fa2d48] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow active:scale-95 transition">
+                  ${ICONS.play}
+                  <span>Play All</span>
+                </button>
+                <button onclick="state.shuffle = true; playTrackById('${group.trackIds[Math.floor(Math.random() * group.trackIds.length)]}', '${safeName}', ${idsJson})" class="flex-1 py-2.5 rounded-2xl liquid-pill-btn text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition">
+                  ${ICONS.shuffle}
+                  <span>Shuffle</span>
+                </button>
+              </div>
+            </section>
+            <section class="space-y-1">
+              ${group.tracks.map((tr, i) => renderTrackRow(tr, i, group.trackIds, group.name)).join('')}
+            </section>
+          `;
+          return;
         }
+      }
 
+      // Folders Grid View
+      if (activeFilter === 'folders') {
+        container.innerHTML = `
+          ${filterBarHtml}
+          <section class="space-y-2.5">
+            <div class="flex items-center justify-between px-1">
+              <h3 class="text-base font-bold tracking-tight">Google Drive Folders</h3>
+              <button onclick="rescanDriveFolder()" class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                ${ICONS.refresh}
+                <span>Sync</span>
+              </button>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              ${folders
+                .map(f => {
+                  const idsJson = JSON.stringify(f.trackIds).replace(/"/g, '&quot;');
+                  const safeName = escapeHtml(f.name).replace(/'/g, "\\'");
+                  return `
+                    <div onclick="openLibraryCollection('folders', '${safeName}')" class="rounded-3xl liquid-glass p-3 space-y-2.5 cursor-pointer active:scale-[0.98] transition">
+                      <div class="relative w-full aspect-square rounded-2xl overflow-hidden shadow">
+                        ${renderAlbumArtwork(f.coverTrack, 'w-full h-full')}
+                        <div class="absolute top-2 left-2 px-2 py-1 rounded-full bg-black/55 backdrop-blur-md text-white text-[10px] font-bold flex items-center gap-1">
+                          <span class="w-3 h-3 inline-flex items-center justify-center">${ICONS.folder}</span>
+                          <span>Folder</span>
+                        </div>
+                        <button onclick="event.stopPropagation(); playTrackById('${f.trackIds[0]}', '${safeName}', ${idsJson})" class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#fa2d48] text-white flex items-center justify-center shadow-lg active:scale-90 transition" aria-label="Play Folder">
+                          ${ICONS.play}
+                        </button>
+                      </div>
+                      <div class="min-w-0">
+                        <p class="text-xs font-bold truncate">${escapeHtml(f.name)}</p>
+                        <p class="text-[11px] text-zinc-500 dark:text-zinc-400">${f.tracks.length} ${f.tracks.length === 1 ? 'song' : 'songs'}</p>
+                      </div>
+                    </div>
+                  `;
+                })
+                .join('')}
+            </div>
+          </section>
+        `;
+        return;
+      }
+
+      // Albums Grid View
+      if (activeFilter === 'albums') {
+        container.innerHTML = `
+          ${filterBarHtml}
+          <section class="space-y-2.5">
+            <div class="flex items-center justify-between px-1">
+              <h3 class="text-base font-bold tracking-tight">Albums</h3>
+              <span class="text-xs text-zinc-500 dark:text-zinc-400">${albums.length} ${albums.length === 1 ? 'album' : 'albums'}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              ${albums
+                .map(alb => {
+                  const idsJson = JSON.stringify(alb.trackIds).replace(/"/g, '&quot;');
+                  const safeName = escapeHtml(alb.name).replace(/'/g, "\\'");
+                  return `
+                    <div onclick="openLibraryCollection('albums', '${safeName}')" class="rounded-3xl liquid-glass p-3 space-y-2.5 cursor-pointer active:scale-[0.98] transition">
+                      <div class="relative w-full aspect-square rounded-2xl overflow-hidden shadow">
+                        ${renderAlbumArtwork(alb.coverTrack, 'w-full h-full')}
+                        <div class="absolute top-2 left-2 px-2 py-1 rounded-full bg-black/55 backdrop-blur-md text-white text-[10px] font-bold flex items-center gap-1">
+                          <span class="w-3 h-3 inline-flex items-center justify-center">${ICONS.album}</span>
+                          <span>Album</span>
+                        </div>
+                        <button onclick="event.stopPropagation(); playTrackById('${alb.trackIds[0]}', '${safeName}', ${idsJson})" class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#fa2d48] text-white flex items-center justify-center shadow-lg active:scale-90 transition" aria-label="Play Album">
+                          ${ICONS.play}
+                        </button>
+                      </div>
+                      <div class="min-w-0">
+                        <p class="text-xs font-bold truncate">${escapeHtml(alb.name)}</p>
+                        <p class="text-[11px] text-zinc-500 dark:text-zinc-400">${alb.tracks.length} ${alb.tracks.length === 1 ? 'song' : 'songs'}</p>
+                      </div>
+                    </div>
+                  `;
+                })
+                .join('')}
+            </div>
+          </section>
+        `;
+        return;
+      }
+
+      // Favorites View
+      if (activeFilter === 'favorites') {
+        container.innerHTML = `
+          ${filterBarHtml}
+          <section class="space-y-2">
+            <div class="flex items-center justify-between px-1">
+              <h3 class="text-base font-bold tracking-tight">Favorites</h3>
+              <span class="text-xs text-[#fa2d48] font-semibold">${favTracks.length} liked</span>
+            </div>
+            <div class="space-y-1">
+              ${
+                favTracks.length
+                  ? favTracks.map((tr, i) => renderTrackRow(tr, i, favTracks.map(f => f.id), 'Favorites')).join('')
+                  : `<div class="rounded-3xl liquid-glass p-6 text-center text-xs text-zinc-500 dark:text-zinc-400">Tap the heart icon on any song to save it to Favorites.</div>`
+              }
+            </div>
+          </section>
+        `;
+        return;
+      }
+
+      // Default: All Songs View
+      container.innerHTML = `
+        ${filterBarHtml}
         <section class="space-y-2">
           <div class="flex items-center justify-between px-1">
             <h3 class="text-base font-bold tracking-tight">All Folder Songs</h3>
@@ -1861,7 +2168,13 @@
 
       const q = state.searchQuery.trim().toLowerCase();
       const filtered = q
-        ? state.tracks.filter(t => (t.title || '').toLowerCase().includes(q) || (t.format || '').toLowerCase().includes(q))
+        ? state.tracks.filter(
+            t =>
+              (t.title || '').toLowerCase().includes(q) ||
+              (t.album || '').toLowerCase().includes(q) ||
+              (t.folderName || '').toLowerCase().includes(q) ||
+              (t.format || '').toLowerCase().includes(q)
+          )
         : state.tracks;
       const filteredIds = filtered.map(t => t.id);
 
@@ -1871,7 +2184,7 @@
             type="search"
             value="${escapeHtml(state.searchQuery)}"
             oninput="state.searchQuery = this.value; renderCurrentTab();"
-            placeholder="Search songs in ${escapeHtml(state.contextLabel)}..."
+            placeholder="Search songs, albums, or folders..."
             class="w-full px-4 py-3 rounded-2xl liquid-glass text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]"
           />
         </div>
@@ -1879,7 +2192,7 @@
           ${
             filtered.length
               ? filtered.map((tr, i) => renderTrackRow(tr, i, filteredIds, state.contextLabel)).join('')
-              : `<p class="text-center text-xs text-zinc-500 py-8">No matching songs found.</p>`
+              : `<p class="text-center text-xs text-zinc-500 py-8">No matching songs, albums, or folders found.</p>`
           }
         </div>
       `;
