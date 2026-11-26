@@ -489,6 +489,48 @@
     };
 
     const htmlAudio = document.getElementById('ios-bg-audio');
+    const IS_IOS_DEVICE = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    let audioCtx = null;
+    let mediaSourceNode = null;
+    let masterGainNode = null;
+    let webAudioRouted = false;
+
+    function setupForegroundGainRouting() {
+      if (webAudioRouted || !htmlAudio) return;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      try {
+        audioCtx = new AudioContextClass();
+        mediaSourceNode = audioCtx.createMediaElementSource(htmlAudio);
+        masterGainNode = audioCtx.createGain();
+        masterGainNode.gain.value = state.volume;
+        mediaSourceNode.connect(masterGainNode);
+        masterGainNode.connect(audioCtx.destination);
+        webAudioRouted = true;
+      } catch (e) {
+        webAudioRouted = false;
+      }
+    }
+
+    // Keep iOS background & lock-screen playback uninterrupted while allowing foreground GainNode volume control
+    document.addEventListener('visibilitychange', () => {
+      if (!webAudioRouted || !audioCtx || !masterGainNode || !mediaSourceNode) return;
+      if (document.visibilityState === 'hidden') {
+        try {
+          masterGainNode.disconnect();
+          mediaSourceNode.disconnect();
+          mediaSourceNode.connect(audioCtx.destination);
+        } catch (e) {}
+      } else if (document.visibilityState === 'visible') {
+        try {
+          if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+          mediaSourceNode.disconnect();
+          mediaSourceNode.connect(masterGainNode);
+          masterGainNode.connect(audioCtx.destination);
+          masterGainNode.gain.setTargetAtTime(state.volume, audioCtx.currentTime, 0.015);
+        } catch (e) {}
+      }
+    });
 
     // ----------------------------------------------------------------------------
     // 2. APP ICON GENERATOR & THEME HELPERS
@@ -923,9 +965,24 @@
       const clamped = Math.max(0, Math.min(1, Number(val)));
       state.volume = clamped;
       localStorage.setItem(STORAGE_KEYS.VOLUME, String(clamped));
-      try {
-        htmlAudio.volume = clamped;
-      } catch (e) {}
+      if (!webAudioRouted && clamped < 0.999) {
+        setupForegroundGainRouting();
+      }
+      if (webAudioRouted && audioCtx && masterGainNode) {
+        if (audioCtx.state === 'suspended' && document.visibilityState === 'visible') {
+          audioCtx.resume().catch(() => {});
+        }
+        try {
+          masterGainNode.gain.setTargetAtTime(clamped, audioCtx.currentTime, 0.015);
+        } catch (e) {
+          masterGainNode.gain.value = clamped;
+        }
+      }
+      if (!IS_IOS_DEVICE) {
+        try {
+          htmlAudio.volume = clamped;
+        } catch (e) {}
+      }
       const volSlider = document.getElementById('np-volume');
       if (volSlider) {
         volSlider.value = String(clamped);
@@ -1189,13 +1246,18 @@
 
     const volumeEl = document.getElementById('np-volume');
     if (volumeEl) {
-      volumeEl.addEventListener('input', e => setAppVolume(e.target.value));
-      volumeEl.addEventListener('touchmove', e => {
-        if (!e.touches.length) return;
+      const updateFromTouch = e => {
+        if (!e.touches || !e.touches.length) return;
         const rect = volumeEl.getBoundingClientRect();
-        const ratio = (e.touches[0].clientX - rect.left) / rect.width;
-        setAppVolume(ratio);
-      }, { passive: true });
+        if (rect.width > 0) {
+          const ratio = (e.touches[0].clientX - rect.left) / rect.width;
+          setAppVolume(ratio);
+        }
+      };
+      volumeEl.addEventListener('input', e => setAppVolume(e.target.value));
+      volumeEl.addEventListener('change', e => setAppVolume(e.target.value));
+      volumeEl.addEventListener('touchstart', updateFromTouch, { passive: true });
+      volumeEl.addEventListener('touchmove', updateFromTouch, { passive: true });
     }
 
     // ----------------------------------------------------------------------------
