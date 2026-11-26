@@ -825,6 +825,8 @@
     // ----------------------------------------------------------------------------
     // 3. iOS BACKGROUND AUDIO ENGINE & ROLLING BLOB CACHE
     // ----------------------------------------------------------------------------
+    const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     const htmlAudio = document.getElementById('ios-bg-audio');
     const savedVol = parseFloat(localStorage.getItem('aura_app_volume'));
     if (!isNaN(savedVol) && savedVol >= 0 && savedVol <= 1) {
@@ -834,79 +836,67 @@
 
     const blobCache = new Map();
     const blobInFlight = new Map();
-    let lastProgressTick = Date.now();
     let audioAnchorCtx = null;
     let mediaElementSource = null;
     let masterGainNode = null;
 
-    function playAudioWithTimeout(timeoutMs = 3000) {
+    function playAudioWithTimeout(timeoutMs = 3200) {
       return new Promise((resolve, reject) => {
         let settled = false;
         const cleanup = () => {
           clearTimeout(timer);
-          htmlAudio.removeEventListener('error', onAudioError);
-          htmlAudio.removeEventListener('playing', onAudioPlaying);
+          htmlAudio.removeEventListener('error', onAudioErr);
         };
-        const onAudioError = () => {
-          if (!settled) {
-            settled = true;
-            cleanup();
-            reject(new Error('Audio element stream error'));
-          }
+        const onAudioErr = () => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          reject(new Error('Audio element stream error'));
         };
-        const onAudioPlaying = () => {
-          if (!settled) {
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          reject(new Error('Stream connection timeout'));
+        }, timeoutMs);
+
+        htmlAudio.addEventListener('error', onAudioErr, { once: true });
+
+        const p = htmlAudio.play();
+        if (p && typeof p.then === 'function') {
+          p.then(() => {
+            if (settled) return;
             settled = true;
             cleanup();
             resolve();
-          }
-        };
-        const timer = setTimeout(() => {
-          if (!settled) {
+          }).catch(err => {
+            if (settled) return;
             settled = true;
             cleanup();
-            reject(new Error('Stream start timeout'));
-          }
-        }, timeoutMs);
-
-        htmlAudio.addEventListener('error', onAudioError);
-        htmlAudio.addEventListener('playing', onAudioPlaying);
-
-        const playPromise = htmlAudio.play();
-        if (playPromise && typeof playPromise.then === 'function') {
-          playPromise.then(() => {
-            if (!settled && !htmlAudio.error) {
-              settled = true;
-              cleanup();
-              resolve();
-            }
-          }).catch(err => {
-            if (!settled) {
-              settled = true;
-              cleanup();
-              reject(err);
-            }
+            reject(err);
           });
+        } else {
+          settled = true;
+          cleanup();
+          resolve();
         }
       });
     }
 
-    async function fetchTrackBlobUrl(track) {
-      if (!track) return null;
-      if (blobCache.has(track.id)) return blobCache.get(track.id);
+    function fetchTrackBlobUrl(track) {
+      if (!track || !track.streamUrl) return Promise.resolve(null);
+      if (blobCache.has(track.id)) return Promise.resolve(blobCache.get(track.id));
       if (blobInFlight.has(track.id)) return blobInFlight.get(track.id);
 
       const promise = (async () => {
         try {
-          const res = await fetch(track.streamUrl, { mode: 'cors', credentials: 'omit' });
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          const buf = await res.arrayBuffer();
-          if (!buf || buf.byteLength < 256) throw new Error('Empty audio payload');
-          const blob = new Blob([buf], { type: track.mimeType || 'audio/mpeg' });
-          const url = URL.createObjectURL(blob);
-          blobCache.set(track.id, url);
-          pruneOldTrackBlobs();
-          return url;
+          const res = await fetch(track.streamUrl);
+          if (!res.ok) return null;
+          const rawBlob = await res.blob();
+          const typedBlob = new Blob([rawBlob], { type: track.mimeType || 'audio/mpeg' });
+          const objectUrl = URL.createObjectURL(typedBlob);
+          blobCache.set(track.id, objectUrl);
+          return objectUrl;
         } catch (e) {
           return null;
         } finally {
@@ -921,34 +911,30 @@
     function getNextQueueIndex() {
       if (!state.queue.length) return -1;
       if (state.shuffle && state.queue.length > 1) {
-        let candidate = Math.floor(Math.random() * state.queue.length);
-        if (candidate === state.currentTrackIndex) {
-          candidate = (candidate + 1) % state.queue.length;
-        }
-        return candidate;
+        let rand = Math.floor(Math.random() * state.queue.length);
+        if (rand === state.currentTrackIndex) rand = (rand + 1) % state.queue.length;
+        return rand;
       }
       const next = state.currentTrackIndex + 1;
-      if (next < state.queue.length) return next;
-      return state.repeat === 'all' ? 0 : -1;
+      if (next >= state.queue.length) {
+        return state.repeat === 'all' ? 0 : -1;
+      }
+      return next;
     }
 
     function preloadNextTrackBlob() {
       const nextIdx = getNextQueueIndex();
       if (nextIdx < 0) return;
-      const nextTr = state.tracks.find(t => t.id === state.queue[nextIdx]);
-      if (nextTr && !blobCache.has(nextTr.id)) {
-        fetchTrackBlobUrl(nextTr);
-      }
+      const nextTrackObj = state.tracks.find(t => t.id === state.queue[nextIdx]);
+      if (nextTrackObj) fetchTrackBlobUrl(nextTrackObj);
     }
 
     function pruneOldTrackBlobs() {
-      const keepIds = new Set();
+      if (blobCache.size <= 3) return;
       const cur = currentTrack();
-      if (cur) keepIds.add(cur.id);
       const nextIdx = getNextQueueIndex();
-      if (nextIdx >= 0 && state.queue[nextIdx]) {
-        keepIds.add(state.queue[nextIdx]);
-      }
+      const nextId = nextIdx >= 0 ? state.queue[nextIdx] : null;
+      const keepIds = new Set([cur && cur.id, nextId].filter(Boolean));
       for (const [id, url] of blobCache.entries()) {
         if (!keepIds.has(id)) {
           try { URL.revokeObjectURL(url); } catch (e) {}
@@ -957,104 +943,21 @@
       }
     }
 
-    function generateLockScreenArtworkDataUrl(track) {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-        const [c1, c2, c3] = (track && track.colors) || ['#fa2d48', '#8e44ad', '#141418'];
-        const grad = ctx.createLinearGradient(0, 0, 512, 512);
-        grad.addColorStop(0, c1);
-        grad.addColorStop(0.55, c2);
-        grad.addColorStop(1, c3);
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 512, 512);
-
-        ctx.fillStyle = 'rgba(255,255,255,0.16)';
-        ctx.beginPath();
-        ctx.arc(256, 256, 150, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 34px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText((track.title || 'SP MUSIC').slice(0, 22), 256, 265);
-        return canvas.toDataURL('image/png');
-      } catch (e) {
-        return '';
-      }
-    }
-
-    function generateAppMusicIcon() {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = 512;
-        canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-
-        // Rich iOS Music gradient backdrop
-        const bgGrad = ctx.createLinearGradient(0, 0, 512, 512);
-        bgGrad.addColorStop(0, '#ff4f70');
-        bgGrad.addColorStop(0.5, '#fa2d48');
-        bgGrad.addColorStop(1, '#bf1632');
-        ctx.fillStyle = bgGrad;
-        ctx.fillRect(0, 0, 512, 512);
-
-        // Ambient specular studio glow
-        const topGlow = ctx.createRadialGradient(160, 110, 10, 256, 256, 400);
-        topGlow.addColorStop(0, 'rgba(255, 255, 255, 0.34)');
-        topGlow.addColorStop(0.55, 'rgba(255, 255, 255, 0.06)');
-        topGlow.addColorStop(1, 'rgba(0, 0, 0, 0.16)');
-        ctx.fillStyle = topGlow;
-        ctx.fillRect(0, 0, 512, 512);
-
-        // Subtle inner glass ring
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-        ctx.lineWidth = 6;
-        ctx.strokeRect(3, 3, 506, 506);
-
-        // Crisp, balanced vector eighth-note emblem (24x24 grid scaled cleanly)
-        ctx.save();
-        ctx.translate(104, 96);
-        ctx.scale(12.8, 12.8);
-        ctx.shadowColor = 'rgba(95, 6, 24, 0.38)';
-        ctx.shadowBlur = 18;
-        ctx.shadowOffsetY = 8;
-        ctx.fillStyle = '#ffffff';
-
-        const notePath = new Path2D(
-          'M18.5 3.2L9.5 5.1c-.8.17-1.5.88-1.5 1.7v8.45c-.63-.35-1.38-.55-2.2-.55-2.1 0-3.8 1.52-3.8 3.4s1.7 3.4 3.8 3.4 3.8-1.52 3.8-3.4V9.6l7.4-1.56v5.21c-.63-.35-1.38-.55-2.2-.55-2.1 0-3.8 1.52-3.8 3.4s1.7 3.4 3.8 3.4 3.8-1.52 3.8-3.4V4.85c0-.95-.88-1.85-2-1.65z'
-        );
-        ctx.fill(notePath);
-        ctx.restore();
-
-        const dataUrl = canvas.toDataURL('image/png');
-        const touchIcon = document.getElementById('ios-apple-touch-icon');
-        const favIcon = document.getElementById('app-favicon');
-        if (touchIcon) touchIcon.href = dataUrl;
-        if (favIcon) favIcon.href = dataUrl;
-      } catch (e) {}
-    }
-
     // ----------------------------------------------------------------------------
     // 4. PLAYBACK CONTROLS & MEDIA SESSION INTEGRATION
     // ----------------------------------------------------------------------------
     function ensureAudioSessionAnchor() {
+      // IMPORTANT FOR iOS BACKGROUND PLAYBACK:
+      // On iOS Safari / Home Screen PWA, attaching createMediaElementSource(htmlAudio)
+      // routes audio into Web Audio API, which iOS suspends when the screen locks or app
+      // goes to background. Keep <audio> on iOS's native hardware media pipeline!
+      if (isIosDevice) return;
       try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
         if (!audioAnchorCtx) {
           audioAnchorCtx = new AudioCtx();
-          const osc = audioAnchorCtx.createOscillator();
-          const oscGain = audioAnchorCtx.createGain();
-          oscGain.gain.value = 0.00001;
-          osc.connect(oscGain);
-          oscGain.connect(audioAnchorCtx.destination);
-          osc.start();
         }
-        // Route <audio> through Web Audio GainNode so volume slider works on iOS Safari
-        // (iOS Safari ignores htmlAudio.volume and forces it to 1.0)
         if (!mediaElementSource && htmlAudio) {
           mediaElementSource = audioAnchorCtx.createMediaElementSource(htmlAudio);
           masterGainNode = audioAnchorCtx.createGain();
@@ -1072,8 +975,14 @@
       const clamped = Math.max(0, Math.min(1, Number(val) || 0));
       state.volume = clamped;
       try {
-        htmlAudio.volume = clamped;
+        localStorage.setItem('aura_app_volume', String(clamped));
       } catch (e) {}
+
+      if (htmlAudio) {
+        htmlAudio.volume = clamped;
+        htmlAudio.muted = clamped === 0;
+      }
+
       if (masterGainNode && audioAnchorCtx) {
         try {
           masterGainNode.gain.setTargetAtTime(clamped, audioAnchorCtx.currentTime, 0.015);
@@ -1081,90 +990,87 @@
           masterGainNode.gain.value = clamped;
         }
       }
-      try {
-        localStorage.setItem('aura_app_volume', String(clamped));
-      } catch (e) {}
-      updateVolumeSliderStyle();
+
+      const volSlider = document.getElementById('np-volume');
+      if (volSlider) {
+        if (Math.abs(parseFloat(volSlider.value) - clamped) > 0.005) {
+          volSlider.value = clamped;
+        }
+        const pct = clamped * 100;
+        volSlider.style.background = `linear-gradient(to right, #ffffff ${pct}%, rgba(255,255,255,0.2) ${pct}%)`;
+      }
     }
 
     function updatePositionState() {
-      if (!('mediaSession' in navigator) || typeof navigator.mediaSession.setPositionState !== 'function') return;
-      const dur = htmlAudio.duration;
-      if (isFinite(dur) && dur > 0) {
-        try {
-          navigator.mediaSession.setPositionState({
-            duration: dur,
-            playbackRate: htmlAudio.playbackRate || 1,
-            position: Math.min(dur, Math.max(0, htmlAudio.currentTime || 0))
-          });
-        } catch (e) {}
-      }
+      if (!('mediaSession' in navigator) || !navigator.mediaSession.setPositionState) return;
+      if (!isFinite(htmlAudio.duration) || htmlAudio.duration <= 0) return;
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: htmlAudio.duration,
+          playbackRate: htmlAudio.playbackRate || 1,
+          position: Math.min(htmlAudio.currentTime || 0, htmlAudio.duration)
+        });
+      } catch (e) {}
     }
 
     function updateMediaSession(track) {
       if (!('mediaSession' in navigator) || !track) return;
       try {
-        const artworkUrl = generateLockScreenArtworkDataUrl(track);
+        const iconEl = document.getElementById('ios-apple-touch-icon');
+        const artworkSrc = (iconEl && iconEl.href) || '';
         navigator.mediaSession.metadata = new MediaMetadata({
-          title: track.title || 'SP MUSIC',
-          artist: track.artist || state.contextLabel || 'Google Drive',
-          album: state.contextLabel || 'SP MUSIC',
-          artwork: artworkUrl ? [{ src: artworkUrl, sizes: '512x512', type: 'image/png' }] : []
+          title: track.title,
+          artist: track.artist || 'SP MUSIC',
+          album: track.album || track.folderName || 'Google Drive',
+          artwork: artworkSrc ? [{ src: artworkSrc, sizes: '512x512', type: 'image/png' }] : []
         });
         navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';
 
-        // Register Play/Pause
-        navigator.mediaSession.setActionHandler('play', () => togglePlayPause());
-        navigator.mediaSession.setActionHandler('pause', () => togglePlayPause());
+        // Force iOS Lock Screen & Control Center to display Next & Previous track buttons
+        // instead of 15s seek icons
+        try { navigator.mediaSession.setActionHandler('seekbackward', null); } catch (e) {}
+        try { navigator.mediaSession.setActionHandler('seekforward', null); } catch (e) {}
 
-        // On iOS, registering seekbackward/seekforward hides Previous/Next track buttons
-        // and replaces them with 10s/15s skip icons. Explicitly null them so iOS shows
-        // dedicated Previous Track and Next Track controls on the Lock Screen.
-        try {
-          navigator.mediaSession.setActionHandler('seekbackward', null);
-          navigator.mediaSession.setActionHandler('seekforward', null);
-        } catch (e) {}
-
+        navigator.mediaSession.setActionHandler('play', () => {
+          if (!state.isPlaying) togglePlayPause();
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+          if (state.isPlaying) togglePlayPause();
+        });
         navigator.mediaSession.setActionHandler('previoustrack', () => prevTrack());
         navigator.mediaSession.setActionHandler('nexttrack', () => nextTrack());
-
         navigator.mediaSession.setActionHandler('seekto', details => {
-          if (details && typeof details.seekTime === 'number') {
-            htmlAudio.currentTime = details.seekTime;
-            state.currentTime = details.seekTime;
+          if (details && typeof details.seekTime === 'number' && isFinite(htmlAudio.duration)) {
+            htmlAudio.currentTime = Math.max(0, Math.min(details.seekTime, htmlAudio.duration));
+            state.currentTime = htmlAudio.currentTime;
             updatePositionState();
-            updateTimelineUI();
           }
         });
       } catch (e) {}
     }
 
-    async function playTrackById(trackId, contextLabel = null, customQueue = null, resumeOffset = 0) {
+    async function playTrackById(trackId, context = null, customQueue = null, resumeOffset = 0) {
+      const targetIndex = state.tracks.findIndex(t => t.id === trackId);
+      if (targetIndex === -1) return;
+
       if (Array.isArray(customQueue) && customQueue.length) {
-        state.queue = customQueue.slice();
-      } else if (!state.queue.length && state.tracks.length) {
+        state.queue = [...customQueue];
+      } else if (!state.queue.includes(trackId)) {
         state.queue = state.tracks.map(t => t.id);
       }
 
-      const idx = state.queue.indexOf(trackId);
-      if (idx >= 0) {
-        state.currentTrackIndex = idx;
-      } else {
-        const fallbackIdx = state.tracks.findIndex(t => t.id === trackId);
-        if (fallbackIdx < 0) return;
-        state.queue = state.tracks.map(t => t.id);
-        state.currentTrackIndex = fallbackIdx;
-      }
+      const qIdx = state.queue.indexOf(trackId);
+      state.currentTrackIndex = qIdx >= 0 ? qIdx : 0;
+      if (context) state.contextLabel = context;
 
-      if (contextLabel) state.contextLabel = contextLabel;
       const track = currentTrack();
       if (!track) return;
 
       const reqId = ++state.playRequestId;
-      ensureAudioSessionAnchor();
-
       state.currentTime = resumeOffset || 0;
       state.isPlaying = true;
+      ensureAudioSessionAnchor();
+
       updatePlayerUI();
       renderCurrentTab();
 
@@ -1172,8 +1078,7 @@
       if (badge) badge.textContent = 'Connecting Stream...';
 
       const cachedBlob = blobCache.get(track.id);
-      htmlAudio.src = cachedBlob || track.streamUrl;
-      htmlAudio.load();
+      const targetSrc = cachedBlob || track.streamUrl;
 
       // Update Lock Screen metadata & Next/Prev handlers immediately on track switch
       updateMediaSession(track);
@@ -1188,10 +1093,16 @@
         htmlAudio.addEventListener('loadedmetadata', applyOffset);
       }
 
+      // Assign src & call play() immediately without htmlAudio.load() reset
+      // so iOS preserves the active background audio session between tracks
+      htmlAudio.src = targetSrc;
+
       try {
-        await playAudioWithTimeout(2600);
+        await playAudioWithTimeout(3200);
         if (reqId !== state.playRequestId) return;
         updateMediaSession(track);
+        // Cache current track in background if not yet cached so lock-screen transitions stay seamless
+        if (!cachedBlob) fetchTrackBlobUrl(track);
         preloadNextTrackBlob();
         pruneOldTrackBlobs();
         savePlaybackSession();
@@ -1204,9 +1115,8 @@
 
         if (blobUrl) {
           htmlAudio.src = blobUrl;
-          htmlAudio.load();
           try {
-            await playAudioWithTimeout(4000);
+            await playAudioWithTimeout(4500);
             updateMediaSession(track);
             preloadNextTrackBlob();
             savePlaybackSession();
@@ -1217,9 +1127,8 @@
         // Fallback 2: Direct Google Drive usercontent stream
         if (track.fallbackUrl && htmlAudio.src !== track.fallbackUrl) {
           htmlAudio.src = track.fallbackUrl;
-          htmlAudio.load();
           try {
-            await playAudioWithTimeout(4000);
+            await playAudioWithTimeout(4500);
             updateMediaSession(track);
             preloadNextTrackBlob();
             savePlaybackSession();
@@ -1234,51 +1143,68 @@
       }
     }
 
-    async function togglePlayPause() {
+    function togglePlayPause() {
       const track = currentTrack();
       if (!track) {
-        if (!state.driveConfig) openSettingsView();
+        if (state.tracks.length) {
+          playTrackById(state.tracks[0].id);
+        } else {
+          openSettingsView();
+          showToast('Connect a Google Drive folder first');
+        }
         return;
       }
-
-      ensureAudioSessionAnchor();
 
       if (state.isPlaying) {
         htmlAudio.pause();
         state.isPlaying = false;
-        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+        if ('mediaSession' in navigator) {
+          try { navigator.mediaSession.playbackState = 'paused'; } catch (e) {}
+        }
+        updatePlayerUI();
+        renderCurrentTab();
         savePlaybackSession();
-        updatePlayerUI();
-        renderCurrentTab();
-        return;
-      }
-
-      if (!htmlAudio.src || htmlAudio.src === window.location.href) {
-        await playTrackById(track.id, state.contextLabel, state.queue, state.currentTime || 0);
-        return;
-      }
-
-      try {
-        await htmlAudio.play();
-        state.isPlaying = true;
-        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-        updatePlayerUI();
-        renderCurrentTab();
-      } catch (e) {
-        await playTrackById(track.id, state.contextLabel, state.queue, state.currentTime || 0);
+      } else {
+        if (!htmlAudio.src || htmlAudio.src === window.location.href) {
+          playTrackById(track.id, state.contextLabel, state.queue, state.currentTime || 0);
+          return;
+        }
+        ensureAudioSessionAnchor();
+        htmlAudio.play()
+          .then(() => {
+            state.isPlaying = true;
+            updateMediaSession(track);
+            updatePlayerUI();
+            renderCurrentTab();
+          })
+          .catch(() => {
+            playTrackById(track.id, state.contextLabel, state.queue, state.currentTime || 0);
+          });
       }
     }
 
     function nextTrack() {
       if (!state.queue.length) return;
-      const nextIdx = getNextQueueIndex();
-      if (nextIdx < 0) {
-        state.isPlaying = false;
-        updatePlayerUI();
-        return;
+      if (state.shuffle && state.queue.length > 1) {
+        let rand = Math.floor(Math.random() * state.queue.length);
+        if (rand === state.currentTrackIndex) rand = (rand + 1) % state.queue.length;
+        state.currentTrackIndex = rand;
+      } else {
+        const nextIdx = state.currentTrackIndex + 1;
+        if (nextIdx >= state.queue.length) {
+          if (state.repeat === 'all') {
+            state.currentTrackIndex = 0;
+          } else {
+            state.isPlaying = false;
+            updatePlayerUI();
+            return;
+          }
+        } else {
+          state.currentTrackIndex = nextIdx;
+        }
       }
-      const nextId = state.queue[nextIdx];
-      playTrackById(nextId, state.contextLabel, state.queue, 0);
+      const nextTr = currentTrack();
+      if (nextTr) playTrackById(nextTr.id, state.contextLabel, state.queue, 0);
     }
 
     function prevTrack() {
@@ -1287,117 +1213,86 @@
         htmlAudio.currentTime = 0;
         state.currentTime = 0;
         updatePositionState();
-        updatePlayerUI();
         return;
       }
-      const prevIdx = (state.currentTrackIndex - 1 + state.queue.length) % state.queue.length;
-      playTrackById(state.queue[prevIdx], state.contextLabel, state.queue, 0);
+      const prevIdx = state.currentTrackIndex - 1;
+      state.currentTrackIndex = prevIdx < 0 ? state.queue.length - 1 : prevIdx;
+      const prevTr = currentTrack();
+      if (prevTr) playTrackById(prevTr.id, state.contextLabel, state.queue, 0);
     }
 
     function toggleShuffle() {
       state.shuffle = !state.shuffle;
-      savePlaybackSession();
-      preloadNextTrackBlob();
       updatePlayerUI();
+      savePlaybackSession();
       showToast(state.shuffle ? 'Shuffle On' : 'Shuffle Off');
     }
 
     function cycleRepeat() {
-      const modes = ['all', 'one', 'off'];
-      const next = modes[(modes.indexOf(state.repeat) + 1) % modes.length];
+      const order = ['all', 'one', 'off'];
+      const next = order[(order.indexOf(state.repeat) + 1) % order.length];
       state.repeat = next;
+      updatePlayerUI();
       savePlaybackSession();
-      updatePlayerUI();
-      const labels = { all: 'Repeat All', one: 'Repeat One', off: 'Repeat Off' };
-      showToast(labels[next]);
+      showToast(next === 'all' ? 'Repeat All' : next === 'one' ? 'Repeat One' : 'Repeat Off');
     }
 
-    function toggleLikeById(trackId) {
-      if (state.likedIds.has(trackId)) {
-        state.likedIds.delete(trackId);
-        showToast('Removed from Favorites');
-      } else {
-        state.likedIds.add(trackId);
-        showToast('Added to Favorites');
-      }
-      saveUserData();
-      updatePlayerUI();
-      renderCurrentTab();
-    }
-
-    function toggleLikeCurrent() {
+    // ----------------------------------------------------------------------------
+    // 5. HTML5 AUDIO EVENT LISTENERS & BACKGROUND WATCHDOG
+    // ----------------------------------------------------------------------------
+    htmlAudio.addEventListener('loadedmetadata', () => {
       const tr = currentTrack();
-      if (tr) toggleLikeById(tr.id);
-    }
-
-    async function toggleWakeLock() {
-      const label = document.getElementById('wake-lock-label');
-      const btn = document.getElementById('btn-wake-lock');
-      if (!('wakeLock' in navigator)) {
-        showToast('Screen Wake Lock not supported on this iOS version');
-        return;
+      if (tr && isFinite(htmlAudio.duration) && htmlAudio.duration > 0) {
+        tr.duration = htmlAudio.duration;
       }
-      if (state.wakeLock) {
-        try { await state.wakeLock.release(); } catch (e) {}
-        state.wakeLock = null;
-        state.wakeLockDesired = false;
-        if (label) label.textContent = 'Awake';
-        if (btn) btn.classList.remove('text-[#fa2d48]', 'bg-white/15');
-        showToast('Screen Auto-Lock Enabled');
-      } else {
-        try {
-          state.wakeLock = await navigator.wakeLock.request('screen');
-          state.wakeLockDesired = true;
-          if (label) label.textContent = 'Awake On';
-          if (btn) btn.classList.add('text-[#fa2d48]', 'bg-white/15');
-          showToast('Screen Kept Awake');
-        } catch (e) {
-          showToast('Unable to enable Wake Lock');
-        }
-      }
-    }
+      updateMediaSession(tr);
+      updatePositionState();
+      updatePlayerUI();
+    });
 
-    // Native HTML5 Audio Events for iOS Background & Lock Screen Reliability
     htmlAudio.addEventListener('playing', () => {
       state.isPlaying = true;
-      lastProgressTick = Date.now();
       const tr = currentTrack();
       const badge = document.getElementById('np-audio-badge');
       if (badge && tr) badge.textContent = `Google Drive • ${tr.format || 'MP3'}`;
-      if (tr) updateMediaSession(tr);
-      updatePositionState();
+      updateMediaSession(tr);
       updatePlayerUI();
     });
 
     htmlAudio.addEventListener('pause', () => {
       if (!htmlAudio.ended) {
         state.isPlaying = false;
-        if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+        if ('mediaSession' in navigator) {
+          try { navigator.mediaSession.playbackState = 'paused'; } catch (e) {}
+        }
         updatePlayerUI();
       }
     });
 
-    htmlAudio.addEventListener('loadedmetadata', () => {
-      const tr = currentTrack();
-      if (tr && isFinite(htmlAudio.duration) && htmlAudio.duration > 0) {
-        tr.duration = htmlAudio.duration;
-      }
-      if (tr) updateMediaSession(tr);
-      updatePositionState();
-      updatePlayerUI();
-    });
-
+    let lastSessionSaveSec = 0;
     htmlAudio.addEventListener('timeupdate', () => {
-      lastProgressTick = Date.now();
-      const tr = currentTrack();
-      if (tr && isFinite(htmlAudio.duration) && htmlAudio.duration > 0) {
-        tr.duration = htmlAudio.duration;
-      }
       state.currentTime = htmlAudio.currentTime || 0;
-      updateTimelineUI();
-      if (Math.floor(state.currentTime) % 5 === 0) {
-        savePlaybackSession();
+      const dur = isFinite(htmlAudio.duration) && htmlAudio.duration > 0 ? htmlAudio.duration : 0;
+      const pct = dur ? Math.min(100, (state.currentTime / dur) * 100) : 0;
+
+      const miniBar = document.getElementById('mini-progress-bar');
+      if (miniBar) miniBar.style.width = `${pct}%`;
+
+      const scrubber = document.getElementById('np-scrubber');
+      if (scrubber && document.activeElement !== scrubber) {
+        scrubber.value = pct;
+        scrubber.style.background = `linear-gradient(to right, #ffffff ${pct}%, rgba(255,255,255,0.2) ${pct}%)`;
+      }
+
+      const curEl = document.getElementById('np-current-time');
+      const remEl = document.getElementById('np-remaining-time');
+      if (curEl) curEl.textContent = formatTime(state.currentTime);
+      if (remEl) remEl.textContent = dur ? `-${formatTime(Math.max(0, dur - state.currentTime))}` : '-0:00';
+
+      if (Math.floor(state.currentTime) - lastSessionSaveSec >= 5) {
+        lastSessionSaveSec = Math.floor(state.currentTime);
         updatePositionState();
+        savePlaybackSession();
       }
     });
 
@@ -1407,107 +1302,140 @@
         htmlAudio.play().catch(() => {});
         return;
       }
+      const nextIdx = getNextQueueIndex();
+      if (nextIdx >= 0) {
+        const nextTr = state.tracks.find(t => t.id === state.queue[nextIdx]);
+        if (nextTr) {
+          state.currentTrackIndex = nextIdx;
+          state.currentTime = 0;
+          state.isPlaying = true;
+          const cached = blobCache.get(nextTr.id);
+          htmlAudio.src = cached || nextTr.streamUrl;
+          updateMediaSession(nextTr);
+          htmlAudio.play()
+            .then(() => {
+              updateMediaSession(nextTr);
+              preloadNextTrackBlob();
+              pruneOldTrackBlobs();
+              savePlaybackSession();
+            })
+            .catch(() => {
+              playTrackById(nextTr.id, state.contextLabel, state.queue, 0);
+            });
+          updatePlayerUI();
+          renderCurrentTab();
+          return;
+        }
+      }
       nextTrack();
     });
 
     htmlAudio.addEventListener('stalled', () => {
-      if (state.isPlaying) {
-        const badge = document.getElementById('np-audio-badge');
-        if (badge) badge.textContent = 'Reconnecting Stream...';
-        setTimeout(() => {
-          if (state.isPlaying && htmlAudio.paused) {
-            htmlAudio.play().catch(() => {});
-          }
-        }, 1500);
-      }
-    });
-
-    window.addEventListener('online', () => {
       if (state.isPlaying && htmlAudio.paused) {
         htmlAudio.play().catch(() => {});
       }
     });
 
-    document.addEventListener('visibilitychange', async () => {
-      if (!document.hidden) {
-        state.currentTime = htmlAudio.currentTime || state.currentTime;
-        updatePlayerUI();
-        if (state.wakeLockDesired && !state.wakeLock && 'wakeLock' in navigator) {
-          try {
-            state.wakeLock = await navigator.wakeLock.request('screen');
-          } catch (e) {}
-        }
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && state.isPlaying && htmlAudio.paused) {
+        htmlAudio.play().catch(() => {});
       }
     });
 
     // ----------------------------------------------------------------------------
-    // 5. VINYL TURNTABLE RHYTHM RING ANIMATION
+    // 6. VINYL RHYTHM RING ANIMATION & ARTWORK RENDERERS
     // ----------------------------------------------------------------------------
+    let vizAnimId = null;
     function startVisualizerLoop() {
       const canvas = document.getElementById('visualizer-canvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       let phase = 0;
 
-      function draw() {
+      const draw = () => {
         const rect = canvas.getBoundingClientRect();
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const w = Math.max(1, Math.floor(rect.width * dpr));
-        const h = Math.max(1, Math.floor(rect.height * dpr));
-        if (canvas.width !== w || canvas.height !== h) {
-          canvas.width = w;
-          canvas.height = h;
+        if (rect.width > 0 && (canvas.width !== Math.round(rect.width * dpr) || canvas.height !== Math.round(rect.height * dpr))) {
+          canvas.width = Math.round(rect.width * dpr);
+          canvas.height = Math.round(rect.height * dpr);
         }
 
+        const w = canvas.width;
+        const h = canvas.height;
         ctx.clearRect(0, 0, w, h);
-        const cx = w / 2;
-        const cy = h / 2;
-        const baseRadius = Math.min(w, h) * 0.435;
-        const bars = 72;
-        const tr = currentTrack();
-        const [c1, c2] = (tr && tr.colors) || ['#fa2d48', '#8e44ad'];
 
-        if (state.isPlaying) {
-          phase += 0.055;
+        if (w > 0 && h > 0) {
+          const cx = w / 2;
+          const cy = h / 2;
+          const baseRadius = Math.min(w, h) * 0.415;
+          const bars = 64;
+          const tr = currentTrack();
+          const c1 = (tr && tr.colors && tr.colors[0]) || '#fa2d48';
+          const c2 = (tr && tr.colors && tr.colors[1]) || '#8e44ad';
+
+          if (state.isPlaying) phase += 0.085;
+
+          for (let i = 0; i < bars; i++) {
+            const angle = (i / bars) * Math.PI * 2 - Math.PI / 2;
+            const wave = state.isPlaying
+              ? (Math.sin(phase + i * 0.45) * 0.5 + Math.cos(phase * 1.4 - i * 0.3) * 0.5)
+              : -0.7;
+            const len = Math.max(3 * dpr, (wave + 1.1) * 7.5 * dpr);
+            const r1 = baseRadius;
+            const r2 = baseRadius + len;
+
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(angle) * r1, cy + Math.sin(angle) * r1);
+            ctx.lineTo(cx + Math.cos(angle) * r2, cy + Math.sin(angle) * r2);
+            ctx.strokeStyle = i % 2 === 0 ? c1 : c2;
+            ctx.globalAlpha = state.isPlaying ? 0.65 : 0.22;
+            ctx.lineWidth = 2.2 * dpr;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+          }
+          ctx.globalAlpha = 1;
         }
+        vizAnimId = requestAnimationFrame(draw);
+      };
 
-        for (let i = 0; i < bars; i++) {
-          const angle = (i / bars) * Math.PI * 2 - Math.PI / 2;
-          const wave = state.isPlaying
-            ? (Math.sin(i * 0.35 + phase) * 0.5 + 0.5) * (Math.cos(i * 0.18 - phase * 1.3) * 0.5 + 0.5)
-            : 0.06;
-          const barLen = (3 + wave * 13) * dpr;
+      if (vizAnimId) cancelAnimationFrame(vizAnimId);
+      draw();
+    }
 
-          const x1 = cx + Math.cos(angle) * baseRadius;
-          const y1 = cy + Math.sin(angle) * baseRadius;
-          const x2 = cx + Math.cos(angle) * (baseRadius + barLen);
-          const y2 = cy + Math.sin(angle) * (baseRadius + barLen);
+    function getCoverInitial(title) {
+      const cleaned = (title || 'M')
+        .replace(/^[\d\s._-]+/, '')
+        .replace(/[^a-zA-Z0-9\u0B80-\u0BFF]/g, '');
+      return (cleaned.charAt(0) || 'M').toUpperCase();
+    }
 
-          ctx.strokeStyle = i % 2 === 0 ? c1 : c2;
-          ctx.globalAlpha = state.isPlaying ? 0.45 + wave * 0.45 : 0.18;
-          ctx.lineWidth = 2.2 * dpr;
-          ctx.lineCap = 'round';
-          ctx.beginPath();
-          ctx.moveTo(x1, y1);
-          ctx.lineTo(x2, y2);
-          ctx.stroke();
-        }
-        ctx.globalAlpha = 1;
-        requestAnimationFrame(draw);
-      }
-
-      requestAnimationFrame(draw);
+    function renderAlbumArtwork(track, isPlayingActive = false, large = false) {
+      const [c1, c2, c3] = (track && track.colors) || ['#fa2d48', '#8e44ad', '#141418'];
+      const initial = getCoverInitial(track && track.title);
+      return `
+        <div class="relative w-full h-full flex items-center justify-center overflow-hidden" style="background: linear-gradient(135deg, ${c1}, ${c2} 58%, ${c3});">
+          <div class="absolute -top-3 -right-3 w-12 h-12 rounded-full bg-white/20 blur-md"></div>
+          <span class="${large ? 'text-2xl' : 'text-sm'} font-extrabold text-white/95 drop-shadow">${initial}</span>
+          ${isPlayingActive && !large ? `
+            <div class="absolute inset-0 bg-black/45 flex items-end justify-center pb-2.5 gap-[2.5px] eq-playing">
+              <span class="bar-1 w-[2.5px] h-3 bg-[#fa2d48] rounded-full"></span>
+              <span class="bar-2 w-[2.5px] h-3.5 bg-white rounded-full"></span>
+              <span class="bar-3 w-[2.5px] h-2.5 bg-[#fa2d48] rounded-full"></span>
+              <span class="bar-4 w-[2.5px] h-3 bg-white rounded-full"></span>
+            </div>
+          ` : ''}
+        </div>
+      `;
     }
 
     // ----------------------------------------------------------------------------
-    // 6. DYNAMIC ALBUM ARTWORK & UI HELPERS
+    // 7. UI NAVIGATION, TABS & VIEWS (LISTEN NOW, LIBRARY, SEARCH, SETTINGS)
     // ----------------------------------------------------------------------------
     function formatTime(sec) {
       if (!isFinite(sec) || sec < 0) return '0:00';
-      const total = Math.floor(sec);
-      const mins = Math.floor(total / 60);
-      const secs = total % 60;
-      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
     function escapeHtml(str) {
@@ -1515,196 +1443,67 @@
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
-    function renderAlbumArtwork(track, sizeClass = 'w-12 h-12') {
-      const [c1, c2, c3] = (track && track.colors) || ['#fa2d48', '#8e44ad', '#141418'];
-      const cleanedName = ((track && track.title) || 'M').replace(/^[\d\s._-]+/, '').trim();
-      const letter = (cleanedName || (track && track.title) || 'M').charAt(0).toUpperCase();
-      return `
-        <div class="${sizeClass} relative overflow-hidden flex items-center justify-center" style="background: linear-gradient(135deg, ${c1}, ${c2} 60%, ${c3});">
-          <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,0.32),transparent_60%)]"></div>
-          <span class="relative font-bold text-white/95 drop-shadow select-none" style="font-size: clamp(14px, 36%, 34px);">${escapeHtml(letter)}</span>
-        </div>
-      `;
+    function getFolderGroups() {
+      const map = new Map();
+      state.tracks.forEach(t => {
+        const key = t.folderName || 'Google Drive';
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(t);
+      });
+      return [...map.entries()].map(([name, tracks], idx) => ({
+        name,
+        tracks,
+        colors: COVER_PALETTES[idx % COVER_PALETTES.length].colors
+      }));
     }
 
-    function showToast(msg) {
-      const toast = document.getElementById('ios-toast');
-      const label = document.getElementById('toast-msg');
-      if (!toast || !label) return;
-      label.textContent = msg;
-      toast.classList.remove('opacity-0', '-translate-y-4');
-      toast.classList.add('opacity-100', 'translate-y-0');
-      clearTimeout(toast._timer);
-      toast._timer = setTimeout(() => {
-        toast.classList.add('opacity-0', '-translate-y-4');
-        toast.classList.remove('opacity-100', 'translate-y-0');
-      }, 2400);
+    function getAlbumGroups() {
+      const map = new Map();
+      state.tracks.forEach(t => {
+        const key = t.album || t.folderName || 'Singles';
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(t);
+      });
+      return [...map.entries()].map(([name, tracks], idx) => ({
+        name,
+        tracks,
+        colors: COVER_PALETTES[(idx + 1) % COVER_PALETTES.length].colors
+      }));
     }
 
-    // ----------------------------------------------------------------------------
-    // 7. PLAYER UI & TIMELINE SYNCHRONIZATION
-    // ----------------------------------------------------------------------------
-    function updateTimelineUI() {
-      const tr = currentTrack();
-      const duration = (tr && tr.duration) || htmlAudio.duration || 0;
-      const cur = state.currentTime || 0;
-      const pct = duration > 0 ? Math.min(100, (cur / duration) * 100) : 0;
+    function switchTab(tab) {
+      state.activeTab = tab;
+      if (tab !== 'library') state.selectedCollection = null;
 
-      const miniBar = document.getElementById('mini-progress-bar');
-      if (miniBar) miniBar.style.width = `${pct}%`;
-
-      const scrubber = document.getElementById('np-scrubber');
-      if (scrubber && !scrubber._dragging) {
-        scrubber.value = pct;
-        scrubber.style.background = `linear-gradient(to right, #ffffff ${pct}%, rgba(255,255,255,0.22) ${pct}%)`;
-      }
-
-      const curEl = document.getElementById('np-current-time');
-      const remEl = document.getElementById('np-remaining-time');
-      if (curEl) curEl.textContent = formatTime(cur);
-      if (remEl) remEl.textContent = duration > 0 ? `-${formatTime(Math.max(0, duration - cur))}` : '-0:00';
-    }
-
-    function updatePlayerUI() {
-      const tr = currentTrack();
-      const miniContainer = document.getElementById('mini-player-container');
-
-      if (!tr || !state.tracks.length) {
-        if (miniContainer) miniContainer.classList.add('hidden');
-        return;
-      }
-
-      if (miniContainer) miniContainer.classList.remove('hidden');
-
-      // Mini-Player
-      const miniArt = document.getElementById('mini-art');
-      const miniTitle = document.getElementById('mini-title');
-      const miniArtist = document.getElementById('mini-artist');
-      const miniPlayBtn = document.getElementById('mini-play-btn');
-      const miniNextBtn = document.getElementById('mini-next-btn');
-
-      if (miniArt) miniArt.innerHTML = renderAlbumArtwork(tr, 'w-full h-full');
-      if (miniTitle) miniTitle.textContent = tr.title;
-      if (miniArtist) miniArtist.textContent = tr.artist || state.contextLabel;
-      if (miniPlayBtn) miniPlayBtn.innerHTML = state.isPlaying ? ICONS.pause : ICONS.play;
-      if (miniNextBtn) miniNextBtn.innerHTML = ICONS.next;
-
-      // Full-Screen Now Playing Sheet
-      const npArt = document.getElementById('np-art-wrapper');
-      const npTitle = document.getElementById('np-title');
-      const npArtist = document.getElementById('np-artist');
-      const npContext = document.getElementById('np-context-label');
-      const npPlayBtn = document.getElementById('np-play-btn');
-      const npPrevBtn = document.getElementById('np-prev-btn');
-      const npNextBtn = document.getElementById('np-next-btn');
-      const npLikeBtn = document.getElementById('np-like-btn');
-      const npShuffleBtn = document.getElementById('np-shuffle-btn');
-      const npRepeatBtn = document.getElementById('np-repeat-btn');
-      const npRepeatIcon = document.getElementById('np-repeat-icon');
-      const npRepeatDot = document.getElementById('np-repeat-one-dot');
-
-      if (npArt) npArt.innerHTML = renderAlbumArtwork(tr, 'w-full h-full');
-      if (npTitle) npTitle.textContent = tr.title;
-      if (npArtist) npArtist.textContent = tr.artist || state.contextLabel;
-      if (npContext) npContext.textContent = state.contextLabel;
-      if (npPlayBtn) npPlayBtn.innerHTML = state.isPlaying ? ICONS.pauseLg : ICONS.playLg;
-      if (npPrevBtn) npPrevBtn.innerHTML = ICONS.prevLg;
-      if (npNextBtn) npNextBtn.innerHTML = ICONS.nextLg;
-
-      const isLiked = state.likedIds.has(tr.id);
-      if (npLikeBtn) npLikeBtn.innerHTML = isLiked ? ICONS.heartFilled : ICONS.heartOutline;
-
-      if (npShuffleBtn) {
-        npShuffleBtn.innerHTML = ICONS.shuffle;
-        npShuffleBtn.classList.toggle('text-[#fa2d48]', state.shuffle);
-        npShuffleBtn.classList.toggle('text-white/50', !state.shuffle);
-      }
-
-      if (npRepeatBtn && npRepeatIcon) {
-        npRepeatIcon.innerHTML = ICONS.repeat;
-        const activeRepeat = state.repeat !== 'off';
-        npRepeatBtn.classList.toggle('text-[#fa2d48]', activeRepeat);
-        npRepeatBtn.classList.toggle('text-white/50', !activeRepeat);
-        if (npRepeatDot) npRepeatDot.classList.toggle('hidden', state.repeat !== 'one');
-      }
-
-      // Vinyl Turntable Disc & Tonearm State
-      const vinylDisc = document.getElementById('vinyl-disc');
-      const vinylTonearm = document.getElementById('vinyl-tonearm');
-      const vinylLabel = document.getElementById('vinyl-status-label');
-      if (vinylDisc) vinylDisc.classList.toggle('is-spinning', state.isPlaying);
-      if (vinylTonearm) vinylTonearm.classList.toggle('is-playing', state.isPlaying);
-      if (vinylLabel) {
-        vinylLabel.textContent = state.isPlaying ? '33⅓ RPM • Spinning Live' : '33⅓ RPM • Paused';
-      }
-
-      // Ambient Orbs
-      const [c1, c2, c3] = tr.colors || ['#fa2d48', '#8e44ad', '#0a84ff'];
-      const orb1 = document.getElementById('np-orb-1');
-      const orb2 = document.getElementById('np-orb-2');
-      const orb3 = document.getElementById('np-orb-3');
-      if (orb1) orb1.style.background = c1;
-      if (orb2) orb2.style.background = c2;
-      if (orb3) orb3.style.background = c3;
-
-      updateTimelineUI();
-      if (state.npMode === 'queue') renderNpQueue();
-      if (state.npMode === 'lyrics') renderNpLyrics();
-    }
-
-    function updateVolumeSliderStyle() {
-      const volSlider = document.getElementById('np-volume');
-      if (!volSlider) return;
-      const pct = Math.round(state.volume * 100);
-      volSlider.value = state.volume;
-      volSlider.style.background = `linear-gradient(to right, #ffffff ${pct}%, rgba(255,255,255,0.22) ${pct}%)`;
-    }
-
-    // ----------------------------------------------------------------------------
-    // 8. TABS, VIEWS & TRACK LIST RENDERING
-    // ----------------------------------------------------------------------------
-    function switchTab(tabName) {
-      state.activeTab = tabName;
-      const titles = {
-        listen: 'SP MUSIC',
-        library: 'Library',
-        search: 'Search',
-        settings: 'Settings'
-      };
-      const tabIndexMap = { listen: 0, library: 1, search: 2 };
-      const headerTitle = document.getElementById('header-title');
-      if (headerTitle) headerTitle.textContent = titles[tabName] || 'SP MUSIC';
-
-      // Animate sliding Liquid Glass lens
-      const glassPill = document.getElementById('nav-glass-pill');
-      if (glassPill) {
-        if (tabName in tabIndexMap) {
-          const idx = tabIndexMap[tabName];
-          const tx = `translateX(${idx * 100}%)`;
-          glassPill.style.opacity = '1';
-          glassPill.style.setProperty('--lens-tx', tx);
-          glassPill.classList.add('is-gliding');
-          glassPill.style.transform = `${tx} scaleX(1.12) scaleY(0.92)`;
-          clearTimeout(glassPill._glideTimer);
-          glassPill._glideTimer = setTimeout(() => {
-            glassPill.classList.remove('is-gliding');
-            glassPill.style.transform = tx;
-          }, 190);
+      const tabOrder = ['listen', 'library', 'search'];
+      const idx = tabOrder.indexOf(tab);
+      const pill = document.getElementById('nav-glass-pill');
+      if (pill) {
+        if (idx >= 0) {
+          pill.style.opacity = '1';
+          pill.style.transform = `translateX(${idx * 100}%)`;
         } else {
-          glassPill.style.opacity = '0';
+          pill.style.opacity = '0';
         }
       }
 
       document.querySelectorAll('.tab-btn').forEach(btn => {
-        const active = btn.dataset.tab === tabName;
+        const active = btn.dataset.tab === tab;
         btn.classList.toggle('is-active', active);
         btn.classList.toggle('text-[#fa2d48]', active);
         btn.classList.toggle('text-zinc-500', !active);
         btn.classList.toggle('dark:text-white/60', !active);
       });
+
+      const titleEl = document.getElementById('header-title');
+      if (titleEl) {
+        const map = { listen: 'SP MUSIC', library: 'Library', search: 'Search', settings: 'Settings' };
+        titleEl.textContent = map[tab] || 'SP MUSIC';
+      }
 
       renderCurrentTab();
     }
@@ -1719,625 +1518,465 @@
 
       if (state.activeTab === 'settings') {
         renderSettings(container);
-      } else if (state.activeTab === 'library') {
-        renderLibrary(container);
-      } else if (state.activeTab === 'search') {
-        renderSearch(container);
-      } else {
-        renderListenNow(container);
+        return;
       }
+
+      if (!state.driveConfig && !state.isLoadingFolder) {
+        container.innerHTML = `
+          <div class="mt-4 p-6 rounded-3xl liquid-glass text-center space-y-4">
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-[#fa2d48]/15 text-[#fa2d48] flex items-center justify-center">
+              ${ICONS.drive}
+            </div>
+            <div class="space-y-1.5">
+              <h2 class="text-lg font-extrabold tracking-tight">No Google Drive Folder Connected</h2>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed max-w-xs mx-auto">
+                Connect your public Google Drive music folder in Settings to stream your songs continuously on iOS.
+              </p>
+            </div>
+            <button onclick="openSettingsView()" class="px-6 py-3 rounded-full bg-[#fa2d48] text-white text-xs font-bold shadow-lg shadow-[#fa2d48]/25 active:scale-95 transition">
+              Open Settings & Connect Drive
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      if (state.isLoadingFolder && !state.tracks.length) {
+        container.innerHTML = `
+          <div class="mt-8 p-8 rounded-3xl liquid-glass text-center space-y-3">
+            <div class="w-8 h-8 mx-auto border-2 border-[#fa2d48] border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-sm font-bold">Scanning Google Drive Folder...</p>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400">Discovering songs, albums & subfolders</p>
+          </div>
+        `;
+        return;
+      }
+
+      if (state.activeTab === 'listen') renderListenNow(container);
+      else if (state.activeTab === 'library') renderLibrary(container);
+      else if (state.activeTab === 'search') renderSearch(container);
     }
 
-    function renderEmptyFolderPrompt() {
+    function renderTrackRow(track, contextLabel, queueIds) {
+      const active = currentTrack() && currentTrack().id === track.id;
+      const liked = state.likedIds.has(track.id);
+      const qJson = escapeHtml(JSON.stringify(queueIds));
+
       return `
-        <div class="rounded-3xl liquid-glass p-6 text-center space-y-4">
-          <div class="w-14 h-14 rounded-2xl bg-[#fa2d48]/15 text-[#fa2d48] mx-auto flex items-center justify-center">
-            ${ICONS.drive}
+        <div onclick="playTrackById('${escapeHtml(track.id)}', '${escapeHtml(contextLabel)}', JSON.parse(this.dataset.queue))" data-queue="${qJson}"
+             class="group flex items-center justify-between gap-3 p-2.5 rounded-2xl transition cursor-pointer active:scale-[0.99] ${active ? 'bg-[#fa2d48]/10 ring-1 ring-[#fa2d48]/30' : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.06]'}">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-11 h-11 rounded-xl overflow-hidden shrink-0 shadow-sm">
+              ${renderAlbumArtwork(track, active && state.isPlaying)}
+            </div>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-bold truncate ${active ? 'text-[#fa2d48]' : ''}">${escapeHtml(track.title)}</p>
+              <p class="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 truncate uppercase tracking-wide">
+                ${escapeHtml(track.folderName || 'Google Drive')} • ${escapeHtml(track.format || 'MP3')}
+              </p>
+            </div>
           </div>
-          <div class="space-y-1">
-            <h2 class="text-lg font-bold tracking-tight">No Google Drive Folder Connected</h2>
-            <p class="text-xs text-zinc-500 dark:text-zinc-400 max-w-xs mx-auto leading-relaxed">
-              Connect your public Google Drive music folder in Settings to stream your songs continuously on iOS.
-            </p>
-          </div>
-          <button onclick="openSettingsView()" class="px-5 py-2.5 rounded-full bg-[#fa2d48] text-white text-xs font-semibold shadow-lg active:scale-95 transition">
-            Open Settings & Connect Drive
+          <button onclick="event.stopPropagation(); toggleLikeTrack('${escapeHtml(track.id)}')" class="w-9 h-9 rounded-full flex items-center justify-center text-zinc-400 hover:text-[#fa2d48] active:scale-90 transition shrink-0" aria-label="Favorite">
+            ${liked ? ICONS.heartFilled : ICONS.heartOutline}
           </button>
         </div>
       `;
     }
 
-    function renderTrackRow(track, index, queueIds, contextLabel) {
-      const active = currentTrack() && currentTrack().id === track.id;
-      const isLiked = state.likedIds.has(track.id);
-      const queueJson = JSON.stringify(queueIds).replace(/"/g, '&quot;');
-      const safeContext = escapeHtml(contextLabel).replace(/'/g, "\\'");
+    function renderListenNow(container) {
+      const queueIds = state.tracks.map(t => t.id);
+      const folders = getFolderGroups();
+      const albums = getAlbumGroups();
 
-      return `
-        <div onclick="playTrackById('${track.id}', '${safeContext}', ${queueJson})"
-          class="group flex items-center justify-between gap-3 p-2.5 rounded-2xl transition cursor-pointer ${
-            active
-              ? 'bg-[#fa2d48]/12 dark:bg-white/[0.10] ring-1 ring-[#fa2d48]/35'
-              : 'hover:bg-black/[0.04] dark:hover:bg-white/[0.05]'
-          }">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 shadow">
-              ${renderAlbumArtwork(track, 'w-full h-full')}
-              ${
-                active
-                  ? `<div class="absolute inset-0 bg-black/45 flex items-center justify-center">
-                      <div class="flex items-end gap-0.5 h-3.5 ${state.isPlaying ? 'eq-playing' : ''}">
-                        <span class="bar-1 w-0.5 bg-[#fa2d48] rounded-full h-2"></span>
-                        <span class="bar-2 w-0.5 bg-[#fa2d48] rounded-full h-3"></span>
-                        <span class="bar-3 w-0.5 bg-[#fa2d48] rounded-full h-1.5"></span>
-                        <span class="bar-4 w-0.5 bg-[#fa2d48] rounded-full h-2.5"></span>
-                      </div>
-                    </div>`
-                  : ''
-              }
+      container.innerHTML = `
+        <input id="drive-song-upload-input" type="file" accept="audio/*,.mp3,.m4a,.wav,.flac,.ogg,.aac" multiple class="hidden" onchange="handleUploadSongsToDrive(this.files)" />
+
+        <!-- Linked Folder Hero Card -->
+        <div class="p-4 rounded-3xl liquid-glass space-y-3.5">
+          <div class="flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <p class="text-[10px] font-bold uppercase tracking-wider text-[#fa2d48]">Connected Drive Library</p>
+              <h2 class="text-lg font-extrabold truncate">${escapeHtml((state.driveConfig && state.driveConfig.folderName) || 'Google Drive')}</h2>
+              <p class="text-xs text-zinc-500 dark:text-zinc-400">${state.tracks.length} songs • ${folders.length} folders • ${albums.length} albums</p>
             </div>
-            <div class="min-w-0 flex-1">
-              <p class="text-[14px] font-semibold truncate ${active ? 'text-[#fa2d48]' : 'text-zinc-900 dark:text-white'}">
-                ${escapeHtml(track.title)}
-              </p>
-              <p class="text-[12px] text-zinc-500 dark:text-zinc-400 truncate">
-                ${escapeHtml(track.artist)} • ${escapeHtml(track.format || 'MP3')}
-              </p>
+            <button onclick="playTrackById('${escapeHtml(state.tracks[0].id)}', '${escapeHtml(state.contextLabel)}', ${escapeHtml(JSON.stringify(queueIds))})"
+                    class="w-11 h-11 rounded-full bg-[#fa2d48] text-white flex items-center justify-center shadow-lg shadow-[#fa2d48]/30 active:scale-90 transition shrink-0">
+              ${ICONS.playLg}
+            </button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="triggerDriveSongPicker()" class="px-3 py-1.5 rounded-full bg-[#fa2d48]/12 text-[#fa2d48] text-xs font-bold flex items-center gap-1.5 active:scale-95 transition">
+              ${ICONS.upload} <span>${state.isUploading ? 'Uploading...' : 'Add Songs'}</span>
+            </button>
+            <button onclick="openLibraryFilter('folders')" class="px-3 py-1.5 rounded-full liquid-pill-btn text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition">
+              ${ICONS.folder} <span>Folders (${folders.length})</span>
+            </button>
+            <button onclick="openLibraryFilter('albums')" class="px-3 py-1.5 rounded-full liquid-pill-btn text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition">
+              ${ICONS.album} <span>Albums (${albums.length})</span>
+            </button>
+          </div>
+          ${state.isUploading ? `<p class="text-[11px] font-semibold text-[#fa2d48]">${escapeHtml(state.uploadStatusText)}</p>` : ''}
+        </div>
+
+        <!-- Quick Folders & Albums Carousel -->
+        ${folders.length > 1 || albums.length > 1 ? `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between px-1">
+              <h3 class="text-sm font-extrabold tracking-tight">Folders & Albums</h3>
+              <button onclick="openLibraryFilter('albums')" class="text-xs font-bold text-[#fa2d48]">See All</button>
+            </div>
+            <div class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+              ${albums.slice(0, 8).map(alb => `
+                <div onclick="openCollectionDetail('album', '${escapeHtml(alb.name)}')" class="w-32 shrink-0 p-2.5 rounded-2xl liquid-glass cursor-pointer active:scale-95 transition space-y-2">
+                  <div class="w-full aspect-square rounded-xl overflow-hidden shadow">
+                    ${renderAlbumArtwork(alb.tracks[0], false, true)}
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-xs font-bold truncate">${escapeHtml(alb.name)}</p>
+                    <p class="text-[10px] text-zinc-500 dark:text-zinc-400">${alb.tracks.length} songs</p>
+                  </div>
+                </div>
+              `).join('')}
             </div>
           </div>
-          <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
-            <button onclick="toggleLikeById('${track.id}')" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition" aria-label="Favorite">
-              ${isLiked ? ICONS.heartFilled : ICONS.heartOutline}
+        ` : ''}
+
+        <!-- All Songs List -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between px-1">
+            <h3 class="text-sm font-extrabold tracking-tight">All Songs (${state.tracks.length})</h3>
+            <button onclick="rescanDriveFolder()" class="text-xs font-bold text-[#fa2d48] flex items-center gap-1 active:scale-95 transition">
+              ${ICONS.refresh} <span>Refresh</span>
             </button>
+          </div>
+          <div class="space-y-1">
+            ${state.tracks.map(t => renderTrackRow(t, state.contextLabel, queueIds)).join('')}
           </div>
         </div>
       `;
     }
 
-    function renderListenNow(container) {
-      if (state.isLoadingFolder && !state.tracks.length) {
-        container.innerHTML = `
-          <div class="rounded-3xl liquid-glass p-8 text-center space-y-3">
-            <div class="w-8 h-8 border-2 border-[#fa2d48] border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p class="text-sm font-semibold">Syncing Google Drive Folder...</p>
-          </div>
-        `;
-        return;
-      }
-
-      if (!state.driveConfig || !state.tracks.length) {
-        container.innerHTML = renderEmptyFolderPrompt();
-        return;
-      }
-
-      const allIds = state.tracks.map(t => t.id);
-      const active = currentTrack();
-      const folderGroups = getGroupedCollections('folder');
-      const albumGroups = getGroupedCollections('album');
-
-      container.innerHTML = `
-        <!-- Hero Google Drive Folder Banner -->
-        <section class="rounded-3xl liquid-glass p-5 space-y-4">
-          <div class="flex items-center justify-between gap-3">
-            <div class="min-w-0">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 text-[10px] font-bold uppercase tracking-wider">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Connected Folder
-              </span>
-              <h2 class="text-xl font-bold tracking-tight mt-1.5 truncate">${escapeHtml(state.contextLabel)}</h2>
-              <p class="text-xs text-zinc-500 dark:text-zinc-400">${state.tracks.length} audio tracks ready for iOS streaming</p>
-            </div>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <button onclick="triggerDriveSongPicker()" class="px-3 py-2 rounded-full bg-[#fa2d48]/15 text-[#fa2d48] hover:bg-[#fa2d48]/25 text-xs font-semibold flex items-center gap-1.5 active:scale-95 transition">
-                ${ICONS.upload}
-                <span>Add Songs</span>
-              </button>
-              <button onclick="rescanDriveFolder()" class="w-9 h-9 rounded-full liquid-pill-btn text-xs font-semibold flex items-center justify-center" title="Refresh Folder">
-                ${ICONS.refresh}
-              </button>
-            </div>
-          </div>
-
-          ${
-            state.isUploading
-              ? `<div class="p-3 rounded-2xl bg-[#fa2d48]/12 border border-[#fa2d48]/30 flex items-center gap-2.5 text-xs font-semibold text-[#fa2d48]">
-                  <div class="w-4 h-4 border-2 border-[#fa2d48] border-t-transparent rounded-full animate-spin shrink-0"></div>
-                  <span class="truncate">${escapeHtml(state.uploadStatusText)}</span>
-                </div>`
-              : ''
-          }
-
-          <div class="flex items-center gap-2.5">
-            <button onclick="playTrackById('${allIds[0]}', '${escapeHtml(state.contextLabel).replace(/'/g, "\\'")}', ${JSON.stringify(allIds).replace(/"/g, '&quot;')})"
-              class="flex-1 py-3 rounded-2xl bg-[#fa2d48] text-white font-semibold text-sm shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] transition">
-              ${ICONS.play}
-              <span>Play All</span>
-            </button>
-            <button onclick="state.shuffle = true; playTrackById('${allIds[Math.floor(Math.random() * allIds.length)]}', '${escapeHtml(state.contextLabel).replace(/'/g, "\\'")}', ${JSON.stringify(allIds).replace(/"/g, '&quot;')})"
-              class="flex-1 py-3 rounded-2xl liquid-pill-btn font-semibold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition">
-              ${ICONS.shuffle}
-              <span>Shuffle</span>
-            </button>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2.5">
-            <button onclick="state.libraryFilter = 'folders'; state.selectedCollection = null; switchTab('library');"
-              class="py-2.5 px-3.5 rounded-2xl liquid-pill-btn text-xs font-bold flex items-center justify-between active:scale-[0.98] transition">
-              <span class="flex items-center gap-2">
-                <span class="text-[#fa2d48]">${ICONS.folder}</span>
-                <span>Folders</span>
-              </span>
-              <span class="px-2 py-0.5 rounded-full bg-black/10 dark:bg-white/10 text-[11px]">${folderGroups.length}</span>
-            </button>
-            <button onclick="state.libraryFilter = 'albums'; state.selectedCollection = null; switchTab('library');"
-              class="py-2.5 px-3.5 rounded-2xl liquid-pill-btn text-xs font-bold flex items-center justify-between active:scale-[0.98] transition">
-              <span class="flex items-center gap-2">
-                <span class="text-[#fa2d48]">${ICONS.album}</span>
-                <span>Albums</span>
-              </span>
-              <span class="px-2 py-0.5 rounded-full bg-black/10 dark:bg-white/10 text-[11px]">${albumGroups.length}</span>
-            </button>
-          </div>
-
-          ${
-            active && !state.isPlaying && state.currentTime > 2
-              ? `<button onclick="togglePlayPause()" class="w-full py-2.5 px-3.5 rounded-2xl bg-white/10 hover:bg-white/15 text-xs font-semibold flex items-center justify-between transition">
-                  <span class="truncate">Resume: ${escapeHtml(active.title)} (${formatTime(state.currentTime)})</span>
-                  <span class="text-[#fa2d48] shrink-0 ml-2">Resume →</span>
-                </button>`
-              : ''
-          }
-        </section>
-
-        ${
-          folderGroups.length > 0 || albumGroups.length > 0
-            ? `<section class="space-y-2.5">
-                <div class="flex items-center justify-between px-1">
-                  <h3 class="text-base font-bold tracking-tight">Folders & Albums</h3>
-                  <button onclick="state.libraryFilter = '${folderGroups.length > 1 ? 'folders' : 'albums'}'; state.selectedCollection = null; switchTab('library');" class="text-xs font-semibold text-[#fa2d48]">
-                    Browse All →
-                  </button>
-                </div>
-                <div class="flex gap-3 overflow-x-auto no-scrollbar pb-1">
-                  ${(folderGroups.length > 1 ? folderGroups : albumGroups)
-                    .slice(0, 10)
-                    .map(grp => {
-                      const idsJson = JSON.stringify(grp.trackIds).replace(/"/g, '&quot;');
-                      const safeName = escapeHtml(grp.name).replace(/'/g, "\\'");
-                      const filterTarget = folderGroups.length > 1 ? 'folders' : 'albums';
-                      return `
-                        <div onclick="openLibraryCollection('${filterTarget}', '${safeName}')" class="w-36 shrink-0 rounded-2xl liquid-glass p-2.5 space-y-2 cursor-pointer active:scale-[0.98] transition">
-                          <div class="relative w-full aspect-square rounded-xl overflow-hidden shadow">
-                            ${renderAlbumArtwork(grp.coverTrack, 'w-full h-full')}
-                            <button onclick="event.stopPropagation(); playTrackById('${grp.trackIds[0]}', '${safeName}', ${idsJson})" class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/65 backdrop-blur-md text-white flex items-center justify-center shadow-lg active:scale-90 transition" aria-label="Play ${escapeHtml(grp.name)}">
-                              ${ICONS.play}
-                            </button>
-                          </div>
-                          <div class="min-w-0">
-                            <p class="text-xs font-bold truncate">${escapeHtml(grp.name)}</p>
-                            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">${grp.tracks.length} ${grp.tracks.length === 1 ? 'song' : 'songs'}</p>
-                          </div>
-                        </div>
-                      `;
-                    })
-                    .join('')}
-                </div>
-              </section>`
-            : ''
-        }
-
-        <!-- Track List -->
-        <section class="space-y-2">
-          <div class="flex items-center justify-between px-1">
-            <h3 class="text-base font-bold tracking-tight">Folder Tracks</h3>
-            <span class="text-xs text-zinc-500 dark:text-zinc-400">${state.tracks.length} songs</span>
-          </div>
-          <div class="space-y-1">
-            ${state.tracks.map((tr, i) => renderTrackRow(tr, i, allIds, state.contextLabel)).join('')}
-          </div>
-        </section>
-      `;
-    }
-
-    function getGroupedCollections(type) {
-      const map = new Map();
-      state.tracks.forEach(tr => {
-        const key = type === 'folder' ? (tr.folderName || state.contextLabel) : (tr.album || tr.folderName || state.contextLabel);
-        if (!map.has(key)) {
-          map.set(key, {
-            name: key,
-            tracks: [],
-            trackIds: [],
-            coverTrack: tr
-          });
-        }
-        const entry = map.get(key);
-        entry.tracks.push(tr);
-        entry.trackIds.push(tr.id);
-      });
-      return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    function setLibraryFilter(filter) {
+    function openLibraryFilter(filter) {
       state.libraryFilter = filter;
       state.selectedCollection = null;
-      renderCurrentTab();
+      switchTab('library');
     }
 
-    function openLibraryCollection(filterType, collectionName) {
-      state.libraryFilter = filterType;
-      state.selectedCollection = collectionName;
-      if (state.activeTab !== 'library') {
-        switchTab('library');
-      } else {
-        renderCurrentTab();
-      }
+    function openCollectionDetail(type, name) {
+      state.activeTab = 'library';
+      state.selectedCollection = { type, name };
+      switchTab('library');
     }
 
     function renderLibrary(container) {
-      if (!state.driveConfig || !state.tracks.length) {
-        container.innerHTML = renderEmptyFolderPrompt();
+      const folders = getFolderGroups();
+      const albums = getAlbumGroups();
+      const likedTracks = state.tracks.filter(t => state.likedIds.has(t.id));
+
+      if (state.selectedCollection) {
+        const { type, name } = state.selectedCollection;
+        const colTracks = state.tracks.filter(t => (type === 'folder' ? t.folderName === name : t.album === name));
+        const colQueue = colTracks.map(t => t.id);
+
+        container.innerHTML = `
+          <div class="space-y-4">
+            <button onclick="state.selectedCollection=null; renderCurrentTab();" class="px-3 py-1.5 rounded-full liquid-pill-btn text-xs font-bold inline-flex items-center gap-1 active:scale-95 transition">
+              ${ICONS.chevronLeft} <span>Back to ${type === 'folder' ? 'Folders' : 'Albums'}</span>
+            </button>
+
+            <div class="p-4 rounded-3xl liquid-glass flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-14 h-14 rounded-2xl overflow-hidden shadow shrink-0">
+                  ${colTracks[0] ? renderAlbumArtwork(colTracks[0], false, true) : ''}
+                </div>
+                <div class="min-w-0">
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-[#fa2d48]">${type === 'folder' ? 'Drive Folder' : 'Album'}</p>
+                  <h2 class="text-lg font-extrabold truncate">${escapeHtml(name)}</h2>
+                  <p class="text-xs text-zinc-500 dark:text-zinc-400">${colTracks.length} songs</p>
+                </div>
+              </div>
+              ${colTracks.length ? `
+                <button onclick="playTrackById('${escapeHtml(colTracks[0].id)}', '${escapeHtml(name)}', ${escapeHtml(JSON.stringify(colQueue))})"
+                        class="px-4 py-2.5 rounded-full bg-[#fa2d48] text-white text-xs font-bold flex items-center gap-1.5 shadow-lg shrink-0 active:scale-95 transition">
+                  ${ICONS.play} <span>Play All</span>
+                </button>
+              ` : ''}
+            </div>
+
+            <div class="space-y-1">
+              ${colTracks.map(t => renderTrackRow(t, name, colQueue)).join('')}
+            </div>
+          </div>
+        `;
         return;
       }
 
-      const favTracks = state.tracks.filter(t => state.likedIds.has(t.id));
-      const allIds = state.tracks.map(t => t.id);
-      const folders = getGroupedCollections('folder');
-      const albums = getGroupedCollections('album');
-      const activeFilter = state.libraryFilter || 'songs';
-
-      const pills = [
-        { id: 'songs', label: 'All Songs', count: state.tracks.length },
-        { id: 'folders', label: 'Folders', count: folders.length },
-        { id: 'albums', label: 'Albums', count: albums.length },
-        { id: 'favorites', label: 'Favorites', count: favTracks.length }
+      const filters = [
+        { id: 'songs', label: `All Songs (${state.tracks.length})` },
+        { id: 'folders', label: `Folders (${folders.length})` },
+        { id: 'albums', label: `Albums (${albums.length})` },
+        { id: 'favorites', label: `Favorites (${likedTracks.length})` }
       ];
 
-      const filterBarHtml = `
-        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-          ${pills
-            .map(p => {
-              const isActive = activeFilter === p.id;
+      let bodyHtml = '';
+      if (state.libraryFilter === 'folders') {
+        bodyHtml = `
+          <div class="grid grid-cols-2 gap-3">
+            ${folders.map(f => {
+              const fQueue = f.tracks.map(t => t.id);
               return `
-                <button onclick="setLibraryFilter('${p.id}')" class="px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 ${
-                  isActive
-                    ? 'bg-[#fa2d48] text-white shadow-md'
-                    : 'liquid-pill-btn text-zinc-700 dark:text-white/80'
-                }">
-                  <span>${p.label}</span>
-                  <span class="text-[10px] opacity-80">${p.count}</span>
-                </button>
+                <div onclick="openCollectionDetail('folder', '${escapeHtml(f.name)}')" class="p-3.5 rounded-3xl liquid-glass cursor-pointer active:scale-95 transition space-y-2.5">
+                  <div class="flex items-center justify-between">
+                    <div class="w-10 h-10 rounded-2xl bg-[#fa2d48]/15 text-[#fa2d48] flex items-center justify-center">
+                      ${ICONS.folder}
+                    </div>
+                    <button onclick="event.stopPropagation(); playTrackById('${escapeHtml(f.tracks[0].id)}', '${escapeHtml(f.name)}', ${escapeHtml(JSON.stringify(fQueue))})"
+                            class="w-8 h-8 rounded-full bg-[#fa2d48] text-white flex items-center justify-center shadow active:scale-90 transition">
+                      ${ICONS.play}
+                    </button>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-sm font-extrabold truncate">${escapeHtml(f.name)}</p>
+                    <p class="text-[11px] text-zinc-500 dark:text-zinc-400">${f.tracks.length} songs</p>
+                  </div>
+                </div>
               `;
-            })
-            .join('')}
-        </div>
-      `;
-
-      // Drill-down detail view for a selected Folder or Album
-      if ((activeFilter === 'folders' || activeFilter === 'albums') && state.selectedCollection) {
-        const groups = activeFilter === 'folders' ? folders : albums;
-        const group = groups.find(g => g.name === state.selectedCollection);
-        if (group) {
-          const idsJson = JSON.stringify(group.trackIds).replace(/"/g, '&quot;');
-          const safeName = escapeHtml(group.name).replace(/'/g, "\\'");
-          container.innerHTML = `
-            ${filterBarHtml}
-            <section class="rounded-3xl liquid-glass p-4 space-y-3.5">
-              <button onclick="state.selectedCollection = null; renderCurrentTab();" class="inline-flex items-center gap-1 text-xs font-bold text-[#fa2d48]">
-                ${ICONS.chevronLeft}
-                <span>Back to ${activeFilter === 'folders' ? 'Folders' : 'Albums'}</span>
-              </button>
-              <div class="flex items-center gap-3.5">
-                <div class="w-16 h-16 rounded-2xl overflow-hidden shadow-lg shrink-0">
-                  ${renderAlbumArtwork(group.coverTrack, 'w-full h-full')}
+            }).join('')}
+          </div>
+        `;
+      } else if (state.libraryFilter === 'albums') {
+        bodyHtml = `
+          <div class="grid grid-cols-2 gap-3">
+            ${albums.map(alb => {
+              const aQueue = alb.tracks.map(t => t.id);
+              return `
+                <div onclick="openCollectionDetail('album', '${escapeHtml(alb.name)}')" class="p-3 rounded-3xl liquid-glass cursor-pointer active:scale-95 transition space-y-2.5">
+                  <div class="relative w-full aspect-square rounded-2xl overflow-hidden shadow">
+                    ${renderAlbumArtwork(alb.tracks[0], false, true)}
+                    <button onclick="event.stopPropagation(); playTrackById('${escapeHtml(alb.tracks[0].id)}', '${escapeHtml(alb.name)}', ${escapeHtml(JSON.stringify(aQueue))})"
+                            class="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-[#fa2d48] text-white flex items-center justify-center shadow-lg active:scale-90 transition">
+                      ${ICONS.play}
+                    </button>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-xs font-extrabold truncate">${escapeHtml(alb.name)}</p>
+                    <p class="text-[11px] text-zinc-500 dark:text-zinc-400">${alb.tracks.length} songs</p>
+                  </div>
                 </div>
-                <div class="min-w-0 flex-1">
-                  <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">${activeFilter === 'folders' ? 'Drive Folder' : 'Album'}</span>
-                  <h2 class="text-lg font-extrabold tracking-tight truncate">${escapeHtml(group.name)}</h2>
-                  <p class="text-xs text-zinc-500 dark:text-zinc-400">${group.tracks.length} ${group.tracks.length === 1 ? 'song' : 'songs'}</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <button onclick="playTrackById('${group.trackIds[0]}', '${safeName}', ${idsJson})" class="flex-1 py-2.5 rounded-2xl bg-[#fa2d48] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow active:scale-95 transition">
-                  ${ICONS.play}
-                  <span>Play All</span>
-                </button>
-                <button onclick="state.shuffle = true; playTrackById('${group.trackIds[Math.floor(Math.random() * group.trackIds.length)]}', '${safeName}', ${idsJson})" class="flex-1 py-2.5 rounded-2xl liquid-pill-btn text-xs font-bold flex items-center justify-center gap-1.5 active:scale-95 transition">
-                  ${ICONS.shuffle}
-                  <span>Shuffle</span>
-                </button>
-              </div>
-            </section>
-            <section class="space-y-1">
-              ${group.tracks.map((tr, i) => renderTrackRow(tr, i, group.trackIds, group.name)).join('')}
-            </section>
-          `;
-          return;
-        }
-      }
-
-      // Folders Grid View
-      if (activeFilter === 'folders') {
-        container.innerHTML = `
-          ${filterBarHtml}
-          <section class="space-y-2.5">
-            <div class="flex items-center justify-between px-1">
-              <h3 class="text-base font-bold tracking-tight">Google Drive Folders</h3>
-              <button onclick="rescanDriveFolder()" class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-                ${ICONS.refresh}
-                <span>Sync</span>
-              </button>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              ${folders
-                .map(f => {
-                  const idsJson = JSON.stringify(f.trackIds).replace(/"/g, '&quot;');
-                  const safeName = escapeHtml(f.name).replace(/'/g, "\\'");
-                  return `
-                    <div onclick="openLibraryCollection('folders', '${safeName}')" class="rounded-3xl liquid-glass p-3 space-y-2.5 cursor-pointer active:scale-[0.98] transition">
-                      <div class="relative w-full aspect-square rounded-2xl overflow-hidden shadow">
-                        ${renderAlbumArtwork(f.coverTrack, 'w-full h-full')}
-                        <div class="absolute top-2 left-2 px-2 py-1 rounded-full bg-black/55 backdrop-blur-md text-white text-[10px] font-bold flex items-center gap-1">
-                          <span class="w-3 h-3 inline-flex items-center justify-center">${ICONS.folder}</span>
-                          <span>Folder</span>
-                        </div>
-                        <button onclick="event.stopPropagation(); playTrackById('${f.trackIds[0]}', '${safeName}', ${idsJson})" class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#fa2d48] text-white flex items-center justify-center shadow-lg active:scale-90 transition" aria-label="Play Folder">
-                          ${ICONS.play}
-                        </button>
-                      </div>
-                      <div class="min-w-0">
-                        <p class="text-xs font-bold truncate">${escapeHtml(f.name)}</p>
-                        <p class="text-[11px] text-zinc-500 dark:text-zinc-400">${f.tracks.length} ${f.tracks.length === 1 ? 'song' : 'songs'}</p>
-                      </div>
-                    </div>
-                  `;
-                })
-                .join('')}
-            </div>
-          </section>
+              `;
+            }).join('')}
+          </div>
         `;
-        return;
+      } else if (state.libraryFilter === 'favorites') {
+        const favQueue = likedTracks.map(t => t.id);
+        bodyHtml = likedTracks.length
+          ? `<div class="space-y-1">${likedTracks.map(t => renderTrackRow(t, 'Favorites', favQueue)).join('')}</div>`
+          : `<div class="p-8 rounded-3xl liquid-glass text-center text-xs text-zinc-500 dark:text-zinc-400">Tap the heart icon on any song to save it to Favorites.</div>`;
+      } else {
+        const allQueue = state.tracks.map(t => t.id);
+        bodyHtml = `<div class="space-y-1">${state.tracks.map(t => renderTrackRow(t, state.contextLabel, allQueue)).join('')}</div>`;
       }
 
-      // Albums Grid View
-      if (activeFilter === 'albums') {
-        container.innerHTML = `
-          ${filterBarHtml}
-          <section class="space-y-2.5">
-            <div class="flex items-center justify-between px-1">
-              <h3 class="text-base font-bold tracking-tight">Albums</h3>
-              <span class="text-xs text-zinc-500 dark:text-zinc-400">${albums.length} ${albums.length === 1 ? 'album' : 'albums'}</span>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-              ${albums
-                .map(alb => {
-                  const idsJson = JSON.stringify(alb.trackIds).replace(/"/g, '&quot;');
-                  const safeName = escapeHtml(alb.name).replace(/'/g, "\\'");
-                  return `
-                    <div onclick="openLibraryCollection('albums', '${safeName}')" class="rounded-3xl liquid-glass p-3 space-y-2.5 cursor-pointer active:scale-[0.98] transition">
-                      <div class="relative w-full aspect-square rounded-2xl overflow-hidden shadow">
-                        ${renderAlbumArtwork(alb.coverTrack, 'w-full h-full')}
-                        <div class="absolute top-2 left-2 px-2 py-1 rounded-full bg-black/55 backdrop-blur-md text-white text-[10px] font-bold flex items-center gap-1">
-                          <span class="w-3 h-3 inline-flex items-center justify-center">${ICONS.album}</span>
-                          <span>Album</span>
-                        </div>
-                        <button onclick="event.stopPropagation(); playTrackById('${alb.trackIds[0]}', '${safeName}', ${idsJson})" class="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#fa2d48] text-white flex items-center justify-center shadow-lg active:scale-90 transition" aria-label="Play Album">
-                          ${ICONS.play}
-                        </button>
-                      </div>
-                      <div class="min-w-0">
-                        <p class="text-xs font-bold truncate">${escapeHtml(alb.name)}</p>
-                        <p class="text-[11px] text-zinc-500 dark:text-zinc-400">${alb.tracks.length} ${alb.tracks.length === 1 ? 'song' : 'songs'}</p>
-                      </div>
-                    </div>
-                  `;
-                })
-                .join('')}
-            </div>
-          </section>
-        `;
-        return;
-      }
-
-      // Favorites View
-      if (activeFilter === 'favorites') {
-        container.innerHTML = `
-          ${filterBarHtml}
-          <section class="space-y-2">
-            <div class="flex items-center justify-between px-1">
-              <h3 class="text-base font-bold tracking-tight">Favorites</h3>
-              <span class="text-xs text-[#fa2d48] font-semibold">${favTracks.length} liked</span>
-            </div>
-            <div class="space-y-1">
-              ${
-                favTracks.length
-                  ? favTracks.map((tr, i) => renderTrackRow(tr, i, favTracks.map(f => f.id), 'Favorites')).join('')
-                  : `<div class="rounded-3xl liquid-glass p-6 text-center text-xs text-zinc-500 dark:text-zinc-400">Tap the heart icon on any song to save it to Favorites.</div>`
-              }
-            </div>
-          </section>
-        `;
-        return;
-      }
-
-      // Default: All Songs View
       container.innerHTML = `
-        ${filterBarHtml}
-        <section class="space-y-2">
-          <div class="flex items-center justify-between px-1">
-            <h3 class="text-base font-bold tracking-tight">All Folder Songs</h3>
-            <div class="flex items-center gap-3">
-              <button onclick="triggerDriveSongPicker()" class="text-xs font-semibold text-[#fa2d48] flex items-center gap-1">
-                ${ICONS.upload}
-                <span>Add Songs</span>
-              </button>
-              <button onclick="rescanDriveFolder()" class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
-                ${ICONS.refresh}
-                <span>Refresh</span>
-              </button>
-            </div>
-          </div>
-          <div class="space-y-1">
-            ${state.tracks.map((tr, i) => renderTrackRow(tr, i, allIds, state.contextLabel)).join('')}
-          </div>
-        </section>
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+          ${filters.map(f => `
+            <button onclick="state.libraryFilter='${f.id}'; renderCurrentTab();"
+                    class="px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition active:scale-95 ${state.libraryFilter === f.id ? 'bg-[#fa2d48] text-white shadow' : 'liquid-pill-btn text-zinc-600 dark:text-zinc-300'}">
+              ${f.label}
+            </button>
+          `).join('')}
+        </div>
+        ${bodyHtml}
       `;
     }
 
     function renderSearch(container) {
-      if (!state.driveConfig || !state.tracks.length) {
-        container.innerHTML = renderEmptyFolderPrompt();
-        return;
-      }
-
       const q = state.searchQuery.trim().toLowerCase();
       const filtered = q
-        ? state.tracks.filter(
-            t =>
-              (t.title || '').toLowerCase().includes(q) ||
-              (t.album || '').toLowerCase().includes(q) ||
-              (t.folderName || '').toLowerCase().includes(q) ||
-              (t.format || '').toLowerCase().includes(q)
+        ? state.tracks.filter(t =>
+            (t.title || '').toLowerCase().includes(q) ||
+            (t.folderName || '').toLowerCase().includes(q) ||
+            (t.album || '').toLowerCase().includes(q)
           )
         : state.tracks;
-      const filteredIds = filtered.map(t => t.id);
+      const queueIds = filtered.map(t => t.id);
 
       container.innerHTML = `
         <div class="sticky top-0 z-10 pb-2">
-          <input
-            type="search"
-            value="${escapeHtml(state.searchQuery)}"
-            oninput="state.searchQuery = this.value; renderCurrentTab();"
-            placeholder="Search songs, albums, or folders..."
-            class="w-full px-4 py-3 rounded-2xl liquid-glass text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]"
-          />
+          <div class="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl liquid-glass">
+            <span class="text-zinc-400">${ICONS.tabSearch}</span>
+            <input id="library-search-input" type="search" value="${escapeHtml(state.searchQuery)}"
+                   oninput="state.searchQuery=this.value; renderCurrentTab(); const el=document.getElementById('library-search-input'); if(el){el.focus(); el.setSelectionRange(el.value.length, el.value.length);}"
+                   placeholder="Search songs, folders, albums..."
+                   class="w-full bg-transparent text-sm font-medium outline-none placeholder:text-zinc-400" />
+            ${state.searchQuery ? `<button onclick="state.searchQuery=''; renderCurrentTab();" class="text-xs text-zinc-400 px-1">✕</button>` : ''}
+          </div>
         </div>
         <div class="space-y-1">
-          ${
-            filtered.length
-              ? filtered.map((tr, i) => renderTrackRow(tr, i, filteredIds, state.contextLabel)).join('')
-              : `<p class="text-center text-xs text-zinc-500 py-8">No matching songs, albums, or folders found.</p>`
-          }
+          ${filtered.length
+            ? filtered.map(t => renderTrackRow(t, 'Search Results', queueIds)).join('')
+            : `<div class="p-8 rounded-3xl liquid-glass text-center text-xs text-zinc-500">No matching songs found.</div>`}
         </div>
       `;
     }
 
     function renderSettings(container) {
-      const cfg = state.driveConfig;
+      const cfg = state.driveConfig || {};
       container.innerHTML = `
-        <section class="rounded-3xl liquid-glass p-5 space-y-4">
+        <input id="drive-song-upload-input" type="file" accept="audio/*,.mp3,.m4a,.wav,.flac,.ogg,.aac" multiple class="hidden" onchange="handleUploadSongsToDrive(this.files)" />
+
+        <!-- Connect / Manage Google Drive Folder -->
+        <div class="p-5 rounded-3xl liquid-glass space-y-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2.5">
-              <div class="w-9 h-9 rounded-2xl bg-blue-500/15 text-blue-500 flex items-center justify-center">
+              <div class="w-9 h-9 rounded-xl bg-[#fa2d48]/15 text-[#fa2d48] flex items-center justify-center">
                 ${ICONS.drive}
               </div>
               <div>
-                <h2 class="text-base font-bold tracking-tight">Google Drive Music Source</h2>
-                <p class="text-xs text-zinc-500 dark:text-zinc-400">Public Folder + Drive API v3</p>
+                <h2 class="text-base font-extrabold">Google Drive Folder</h2>
+                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">${state.driveConfig ? `Linked: ${escapeHtml(cfg.folderName)}` : 'Connect public folder via Drive API v3'}</p>
               </div>
             </div>
-            <button onclick="openPwaGuideModal()" class="px-3 py-1.5 rounded-full liquid-pill-btn text-xs font-semibold">
-              iOS Guide
+            ${state.driveConfig ? `
+              <button onclick="rescanDriveFolder()" class="px-3 py-1.5 rounded-full liquid-pill-btn text-xs font-bold flex items-center gap-1 active:scale-95 transition">
+                ${ICONS.refresh} <span>Sync</span>
+              </button>
+            ` : ''}
+          </div>
+
+          ${state.folderError ? `<div class="p-3 rounded-2xl bg-red-500/15 border border-red-500/30 text-xs text-red-400 font-medium">${escapeHtml(state.folderError)}</div>` : ''}
+
+          <form onsubmit="handleConnectDriveFolder(event)" class="space-y-3">
+            <div class="space-y-1">
+              <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Folder URL or Folder ID</label>
+              <input id="gdrive-folder-input" type="text" value="${escapeHtml(cfg.folderId || '')}" placeholder="https://drive.google.com/drive/folders/..."
+                     class="w-full px-3.5 py-2.5 rounded-xl bg-black/[0.05] dark:bg-white/[0.08] text-xs font-medium outline-none border border-transparent focus:border-[#fa2d48]" required />
+            </div>
+            <div class="space-y-1">
+              <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Google Cloud API Key</label>
+              <input id="gdrive-apikey-input" type="password" value="${escapeHtml(cfg.apiKey || '')}" placeholder="AIzaSy..."
+                     class="w-full px-3.5 py-2.5 rounded-xl bg-black/[0.05] dark:bg-white/[0.08] text-xs font-medium outline-none border border-transparent focus:border-[#fa2d48]" required />
+            </div>
+            <div class="flex items-center gap-2 pt-1">
+              <button type="submit" class="flex-1 py-2.5 rounded-full bg-[#fa2d48] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-[#fa2d48]/25 active:scale-95 transition">
+                ${ICONS.link} <span>${state.isLoadingFolder ? 'Connecting...' : (state.driveConfig ? 'Update & Sync Folder' : 'Connect Google Drive')}</span>
+              </button>
+              ${state.driveConfig ? `
+                <button type="button" onclick="unlinkDriveFolder()" class="px-4 py-2.5 rounded-full liquid-pill-btn text-xs font-bold text-red-400 flex items-center gap-1 active:scale-95 transition">
+                  ${ICONS.unlink} <span>Unlink</span>
+                </button>
+              ` : ''}
+            </div>
+          </form>
+        </div>
+
+        <!-- Upload Songs to Google Drive -->
+        <div class="p-5 rounded-3xl liquid-glass space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-extrabold">Upload Songs to Google Drive</h3>
+              <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Add audio files from your iPhone straight into your folder</p>
+            </div>
+            <button onclick="triggerDriveSongPicker()" class="px-3.5 py-2 rounded-full bg-[#fa2d48] text-white text-xs font-bold flex items-center gap-1.5 active:scale-95 transition">
+              ${ICONS.upload} <span>${state.isUploading ? 'Uploading...' : 'Add Songs'}</span>
             </button>
           </div>
-
-          ${
-            state.folderError
-              ? `<div class="p-3 rounded-2xl bg-red-500/15 border border-red-500/30 text-xs text-red-400">
-                  ${escapeHtml(state.folderError)}
-                </div>`
-              : ''
-          }
-
-          ${
-            cfg
-              ? `<div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 space-y-3">
-                  <div class="flex items-center justify-between gap-2">
-                    <div class="min-w-0">
-                      <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-500">Linked & Active</p>
-                      <p class="text-sm font-bold truncate mt-0.5">${escapeHtml(cfg.folderName)}</p>
-                      <p class="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">Folder ID: ${escapeHtml(cfg.folderId)}</p>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold shrink-0">
-                      ${state.tracks.length} songs
-                    </span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <button onclick="triggerDriveSongPicker()" class="flex-1 py-2.5 rounded-xl bg-[#fa2d48] text-white text-xs font-semibold flex items-center justify-center gap-1.5 shadow active:scale-95 transition">
-                      ${ICONS.upload}
-                      <span>Add Songs</span>
-                    </button>
-                    <button onclick="rescanDriveFolder()" class="flex-1 py-2.5 rounded-xl liquid-pill-btn text-xs font-semibold flex items-center justify-center gap-1.5">
-                      ${ICONS.refresh}
-                      <span>Sync</span>
-                    </button>
-                    <button onclick="unlinkDriveFolder()" class="py-2.5 px-3 rounded-xl bg-red-500/15 text-red-500 hover:bg-red-500/25 text-xs font-semibold flex items-center justify-center gap-1 transition" title="Unlink Folder">
-                      ${ICONS.unlink}
-                    </button>
-                  </div>
-                </div>`
-              : `<form onsubmit="handleConnectDriveFolder(event)" class="space-y-3">
-                  <div>
-                    <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Google Drive Folder URL or ID</label>
-                    <input
-                      type="text"
-                      id="gdrive-folder-input"
-                      required
-                      placeholder="https://drive.google.com/drive/folders/..."
-                      class="w-full px-3.5 py-2.5 rounded-2xl bg-black/[0.05] dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]"
-                    />
-                  </div>
-                  <div>
-                    <label class="block text-xs font-semibold text-zinc-500 dark:text-zinc-400 mb-1">Google Cloud API Key (Drive API v3)</label>
-                    <input
-                      type="password"
-                      id="gdrive-apikey-input"
-                      required
-                      placeholder="AIzaSy..."
-                      class="w-full px-3.5 py-2.5 rounded-2xl bg-black/[0.05] dark:bg-white/[0.07] text-sm outline-none focus:ring-2 focus:ring-[#fa2d48]"
-                    />
-                  </div>
-                  <button type="submit" class="w-full py-3 rounded-full bg-[#fa2d48] text-white font-semibold text-sm shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] transition">
-                    ${ICONS.link}
-                    <span>${state.isLoadingFolder ? 'Connecting...' : 'Link & Play Folder'}</span>
-                  </button>
-                </form>`
-          }
-
-          <!-- Google OAuth Client ID for Uploading Songs Directly to Drive -->
-          <div class="pt-3 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2.5">
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-sm font-bold tracking-tight">Upload Songs to Google Drive</h3>
-                <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Optional OAuth 2.0 Web Client ID to add MP3/M4A files from this app</p>
-              </div>
-              ${
-                state.oauthAccessToken
-                  ? `<span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 text-[10px] font-bold">Signed In</span>`
-                  : ''
-              }
-            </div>
-            <input
-              type="text"
-              value="${escapeHtml(state.oauthClientId)}"
-              oninput="saveOAuthClientId(this.value)"
-              placeholder="1234567890-xxxx.apps.googleusercontent.com"
-              class="w-full px-3.5 py-2.5 rounded-2xl bg-black/[0.05] dark:bg-white/[0.07] text-xs outline-none focus:ring-2 focus:ring-[#fa2d48]"
-            />
-            <p class="text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              In Google Cloud Console → <strong>Credentials</strong> → <strong>Create OAuth client ID (Web application)</strong>, add your app URL to <em>Authorized JavaScript origins</em>, and paste the Client ID above.
-            </p>
+          <div class="space-y-1">
+            <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Google OAuth 2.0 Web Client ID</label>
+            <input type="text" value="${escapeHtml(state.oauthClientId)}" oninput="saveOAuthClientId(this.value)"
+                   placeholder="1234567890-abc.apps.googleusercontent.com"
+                   class="w-full px-3.5 py-2.5 rounded-xl bg-black/[0.05] dark:bg-white/[0.08] text-xs font-medium outline-none border border-transparent focus:border-[#fa2d48]" />
           </div>
-        </section>
+          ${state.isUploading ? `<p class="text-xs font-semibold text-[#fa2d48]">${escapeHtml(state.uploadStatusText)}</p>` : ''}
+        </div>
+
+        <!-- iOS Background Playback Setup -->
+        <div class="p-5 rounded-3xl liquid-glass flex items-center justify-between gap-3">
+          <div>
+            <h3 class="text-sm font-extrabold">iOS Lock Screen & Background Audio</h3>
+            <p class="text-[11px] text-zinc-500 dark:text-zinc-400">Install SP MUSIC to your iPhone Home Screen</p>
+          </div>
+          <button onclick="openPwaGuideModal()" class="px-3.5 py-2 rounded-full liquid-pill-btn text-xs font-bold shrink-0">Setup Guide</button>
+        </div>
       `;
     }
 
     // ----------------------------------------------------------------------------
-    // 9. FULL-SCREEN NOW PLAYING SHEET, LYRICS, QUEUE & MODALS
+    // 8. NOW PLAYING SHEET, FAVORITES & PLAYER SYNC
     // ----------------------------------------------------------------------------
+    function updatePlayerUI() {
+      const track = currentTrack();
+      const miniContainer = document.getElementById('mini-player-container');
+      if (!track) {
+        if (miniContainer) miniContainer.classList.add('hidden');
+        return;
+      }
+
+      if (miniContainer) miniContainer.classList.remove('hidden');
+      const miniArt = document.getElementById('mini-art');
+      const miniTitle = document.getElementById('mini-title');
+      const miniArtist = document.getElementById('mini-artist');
+      const miniPlayBtn = document.getElementById('mini-play-btn');
+
+      if (miniArt) miniArt.innerHTML = renderAlbumArtwork(track, state.isPlaying);
+      if (miniTitle) miniTitle.textContent = track.title;
+      if (miniArtist) miniArtist.textContent = `${track.folderName || 'Google Drive'} • ${track.format || 'MP3'}`;
+      if (miniPlayBtn) miniPlayBtn.innerHTML = state.isPlaying ? ICONS.pause : ICONS.play;
+
+      const npTitle = document.getElementById('np-title');
+      const npArtist = document.getElementById('np-artist');
+      const npContext = document.getElementById('np-context-label');
+      const npArtWrap = document.getElementById('np-art-wrapper');
+      const npPlayBtn = document.getElementById('np-play-btn');
+      const npLikeBtn = document.getElementById('np-like-btn');
+      const npShuffleBtn = document.getElementById('np-shuffle-btn');
+      const npRepeatBtn = document.getElementById('np-repeat-btn');
+      const npRepeatDot = document.getElementById('np-repeat-one-dot');
+      const vinylDisc = document.getElementById('vinyl-disc');
+      const vinylArm = document.getElementById('vinyl-tonearm');
+      const vinylLabel = document.getElementById('vinyl-status-label');
+
+      if (npTitle) npTitle.textContent = track.title;
+      if (npArtist) npArtist.textContent = track.album || track.folderName || 'Google Drive';
+      if (npContext) npContext.textContent = state.contextLabel;
+      if (npArtWrap) npArtWrap.innerHTML = renderAlbumArtwork(track, false, true);
+      if (npPlayBtn) npPlayBtn.innerHTML = state.isPlaying ? ICONS.pauseLg : ICONS.playLg;
+      if (npLikeBtn) npLikeBtn.innerHTML = state.likedIds.has(track.id) ? ICONS.heartFilled : ICONS.heartOutline;
+
+      if (npShuffleBtn) {
+        npShuffleBtn.classList.toggle('text-[#fa2d48]', state.shuffle);
+        npShuffleBtn.classList.toggle('text-white/50', !state.shuffle);
+      }
+      if (npRepeatBtn) {
+        const repOn = state.repeat !== 'off';
+        npRepeatBtn.classList.toggle('text-[#fa2d48]', repOn);
+        npRepeatBtn.classList.toggle('text-white/50', !repOn);
+      }
+      if (npRepeatDot) {
+        npRepeatDot.classList.toggle('hidden', state.repeat !== 'one');
+      }
+
+      if (vinylDisc) vinylDisc.classList.toggle('is-spinning', state.isPlaying);
+      if (vinylArm) vinylArm.classList.toggle('is-playing', state.isPlaying);
+      if (vinylLabel) vinylLabel.textContent = state.isPlaying ? '33⅓ RPM • Spinning Live' : '33⅓ RPM • Paused';
+
+      const [c1, c2, c3] = track.colors || ['#fa2d48', '#8e44ad', '#0a84ff'];
+      const orb1 = document.getElementById('np-orb-1');
+      const orb2 = document.getElementById('np-orb-2');
+      const orb3 = document.getElementById('np-orb-3');
+      if (orb1) orb1.style.backgroundColor = c1;
+      if (orb2) orb2.style.backgroundColor = c2;
+      if (orb3) orb3.style.backgroundColor = c3;
+
+      renderNpQueue();
+    }
+
     function openNowPlaying() {
       const sheet = document.getElementById('now-playing-sheet');
       if (sheet) sheet.classList.remove('translate-y-full');
-      updatePlayerUI();
+      setAppVolume(state.volume);
+      startVisualizerLoop();
     }
 
     function closeNowPlaying() {
@@ -2347,89 +1986,74 @@
 
     function toggleNpMode(mode) {
       state.npMode = state.npMode === mode ? 'artwork' : mode;
-      const artView = document.getElementById('np-artwork-view');
-      const lyricsView = document.getElementById('np-lyrics-view');
-      const queueView = document.getElementById('np-queue-view');
-
-      if (artView) artView.classList.toggle('hidden', state.npMode !== 'artwork');
-      if (lyricsView) lyricsView.classList.toggle('hidden', state.npMode !== 'lyrics');
-      if (queueView) queueView.classList.toggle('hidden', state.npMode !== 'queue');
-
+      document.getElementById('np-artwork-view').classList.toggle('hidden', state.npMode !== 'artwork');
+      document.getElementById('np-lyrics-view').classList.toggle('hidden', state.npMode !== 'lyrics');
+      document.getElementById('np-queue-view').classList.toggle('hidden', state.npMode !== 'queue');
       if (state.npMode === 'queue') renderNpQueue();
-      if (state.npMode === 'lyrics') renderNpLyrics();
     }
 
     function renderNpQueue() {
       const list = document.getElementById('np-queue-list');
-      const count = document.getElementById('np-queue-count');
+      const countEl = document.getElementById('np-queue-count');
       if (!list) return;
-      if (count) count.textContent = `${state.queue.length} tracks`;
+      if (countEl) countEl.textContent = `${state.queue.length} tracks`;
 
-      list.innerHTML = state.queue
-        .map((id, idx) => {
-          const tr = state.tracks.find(t => t.id === id);
-          if (!tr) return '';
-          const active = idx === state.currentTrackIndex;
-          return `
-            <div onclick="playTrackById('${tr.id}')" class="flex items-center gap-3 p-2 rounded-xl cursor-pointer ${
-              active ? 'bg-white/15' : 'hover:bg-white/10'
-            }">
-              <div class="w-10 h-10 rounded-lg overflow-hidden shrink-0">${renderAlbumArtwork(tr, 'w-full h-full')}</div>
-              <div class="min-w-0 flex-1">
-                <p class="text-xs font-semibold truncate ${active ? 'text-[#fa2d48]' : 'text-white'}">${escapeHtml(tr.title)}</p>
-                <p class="text-[11px] text-white/55 truncate">${escapeHtml(tr.artist)}</p>
-              </div>
+      list.innerHTML = state.queue.map((id, idx) => {
+        const t = state.tracks.find(item => item.id === id);
+        if (!t) return '';
+        const isCurrent = idx === state.currentTrackIndex;
+        return `
+          <div onclick="playTrackById('${escapeHtml(t.id)}', '${escapeHtml(state.contextLabel)}', state.queue, 0)"
+               class="flex items-center gap-3 p-2 rounded-xl cursor-pointer ${isCurrent ? 'bg-white/15' : 'hover:bg-white/10'}">
+            <div class="w-9 h-9 rounded-lg overflow-hidden shrink-0">${renderAlbumArtwork(t, isCurrent && state.isPlaying)}</div>
+            <div class="min-w-0 flex-1">
+              <p class="text-xs font-bold truncate ${isCurrent ? 'text-[#fa2d48]' : 'text-white'}">${escapeHtml(t.title)}</p>
+              <p class="text-[10px] text-white/50 truncate">${escapeHtml(t.folderName || 'Google Drive')}</p>
             </div>
-          `;
-        })
-        .join('');
+          </div>
+        `;
+      }).join('');
     }
 
-    function renderNpLyrics() {
-      const view = document.getElementById('np-lyrics-view');
-      const tr = currentTrack();
-      if (!view) return;
-      view.innerHTML = `
-        <div class="text-center space-y-4 my-auto">
-          <p class="text-lg font-bold text-white/90">${escapeHtml(tr ? tr.title : 'Google Drive Audio')}</p>
-          <p class="text-sm text-white/55 leading-relaxed max-w-xs mx-auto">
-            Streaming directly from your Google Drive folder (${escapeHtml(state.contextLabel)}).
-          </p>
-        </div>
-      `;
-    }
-
-    function openAirplayModal() {
-      const devices = ['iPhone', 'AirPods Pro', 'HomePod mini', 'CarPlay'];
-      const container = document.getElementById('airplay-devices');
-      if (container) {
-        container.innerHTML = devices
-          .map(
-            dev => `
-            <button onclick="selectAirplayDevice('${dev}')" class="w-full p-3 rounded-2xl flex items-center justify-between text-sm font-semibold ${
-              state.airplayDevice === dev ? 'bg-[#fa2d48] text-white' : 'bg-white/10 text-white/85 hover:bg-white/15'
-            }">
-              <span>${dev}</span>
-              <span>${state.airplayDevice === dev ? '✓' : ''}</span>
-            </button>
-          `
-          )
-          .join('');
+    function toggleLikeTrack(trackId) {
+      if (state.likedIds.has(trackId)) {
+        state.likedIds.delete(trackId);
+        showToast('Removed from Favorites');
+      } else {
+        state.likedIds.add(trackId);
+        showToast('Added to Favorites');
       }
-      openModal('airplay-modal');
+      saveUserData();
+      updatePlayerUI();
+      renderCurrentTab();
     }
 
-    function selectAirplayDevice(dev) {
-      state.airplayDevice = dev;
-      const label = document.getElementById('airplay-label');
-      if (label) label.textContent = dev;
-      closeModal('airplay-modal');
-      showToast(`Audio Output: ${dev}`);
+    function toggleLikeCurrent() {
+      const tr = currentTrack();
+      if (tr) toggleLikeTrack(tr.id);
     }
 
-    function openModal(id) {
-      const el = document.getElementById(id);
-      if (el) el.classList.remove('hidden');
+    // ----------------------------------------------------------------------------
+    // 9. THEME, MODALS, TOAST & DYNAMIC APP ICON GENERATOR
+    // ----------------------------------------------------------------------------
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      try { localStorage.setItem('aura_theme', isDark ? 'dark' : 'light'); } catch (e) {}
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute('content', isDark ? '#000000' : '#f2f2f7');
+    }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const el = document.getElementById('ios-toast');
+      const txt = document.getElementById('toast-msg');
+      if (!el || !txt) return;
+      txt.textContent = msg;
+      el.classList.remove('opacity-0', '-translate-y-4');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        el.classList.add('opacity-0', '-translate-y-4');
+      }, 2600);
     }
 
     function closeModal(id) {
@@ -2437,182 +2061,131 @@
       if (el) el.classList.add('hidden');
     }
 
-    function toggleTheme() {
-      const root = document.documentElement;
-      const isDark = root.classList.toggle('dark');
-      const meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', isDark ? '#000000' : '#f2f2f7');
+    function openPwaGuideModal() {
+      const el = document.getElementById('pwa-guide-modal');
+      if (el) el.classList.remove('hidden');
+    }
+
+    function dismissPwaBanner() {
+      const el = document.getElementById('ios-pwa-banner');
+      if (el) el.classList.add('hidden');
+      try { localStorage.setItem('aura_pwa_banner_dismissed', '1'); } catch (e) {}
+    }
+
+    function generateAppMusicIcon() {
       try {
-        localStorage.setItem('aura_theme_mode', isDark ? 'dark' : 'light');
+        const c = document.createElement('canvas');
+        c.width = 512;
+        c.height = 512;
+        const ctx = c.getContext('2d');
+
+        const grad = ctx.createLinearGradient(0, 0, 512, 512);
+        grad.addColorStop(0, '#ff5376');
+        grad.addColorStop(0.5, '#fa2d48');
+        grad.addColorStop(1, '#b51430');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        ctx.save();
+        ctx.translate(112, 112);
+        ctx.scale(12, 12);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 8;
+        const notePath = new Path2D('M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z');
+        ctx.fill(notePath);
+        ctx.restore();
+
+        const dataUrl = c.toDataURL('image/png');
+        const touchIcon = document.getElementById('ios-apple-touch-icon');
+        const favIcon = document.getElementById('app-favicon');
+        if (touchIcon) touchIcon.href = dataUrl;
+        if (favIcon) favIcon.href = dataUrl;
       } catch (e) {}
     }
 
-    // Wire Scrubber & Volume Controls
-    (function setupPlayerInputs() {
+    // ----------------------------------------------------------------------------
+    // 10. INITIALIZATION
+    // ----------------------------------------------------------------------------
+    window.onload = function () {
+      generateAppMusicIcon();
+
+      // Restore saved theme
+      try {
+        const savedTheme = localStorage.getItem('aura_theme');
+        if (savedTheme === 'light') {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {}
+
+      // Set formatted day subtitle
+      const subEl = document.getElementById('header-subtitle');
+      if (subEl) {
+        subEl.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+      }
+
+      // Inject SVG icons
+      const iconMap = {
+        'icon-header-refresh': ICONS.refresh,
+        'icon-sun': ICONS.sun,
+        'icon-moon': ICONS.moon,
+        'icon-header-settings': ICONS.settings,
+        'pwa-banner-icon': ICONS.musicNote,
+        'guide-logo-icon': ICONS.musicNote,
+        'mini-next-btn': ICONS.next,
+        'np-shuffle-btn': ICONS.shuffle,
+        'np-prev-btn': ICONS.prevLg,
+        'np-next-btn': ICONS.nextLg,
+        'np-repeat-icon': ICONS.repeat
+      };
+      Object.entries(iconMap).forEach(([id, svg]) => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = svg;
+      });
+
+      document.querySelectorAll('.tab-icon').forEach(el => {
+        const k = el.dataset.icon;
+        if (k === 'listen') el.innerHTML = ICONS.tabListen;
+        else if (k === 'library') el.innerHTML = ICONS.tabLibrary;
+        else if (k === 'search') el.innerHTML = ICONS.tabSearch;
+      });
+
+      // Scrubber & Volume listeners
       const scrubber = document.getElementById('np-scrubber');
       if (scrubber) {
         scrubber.addEventListener('input', () => {
-          scrubber._dragging = true;
-          const dur = htmlAudio.duration || (currentTrack() && currentTrack().duration) || 0;
-          const target = (parseFloat(scrubber.value) / 100) * dur;
-          state.currentTime = target;
-          updateTimelineUI();
-        });
-        scrubber.addEventListener('change', () => {
-          const dur = htmlAudio.duration || (currentTrack() && currentTrack().duration) || 0;
+          const dur = isFinite(htmlAudio.duration) ? htmlAudio.duration : 0;
           if (dur > 0) {
             htmlAudio.currentTime = (parseFloat(scrubber.value) / 100) * dur;
             state.currentTime = htmlAudio.currentTime;
             updatePositionState();
           }
-          scrubber._dragging = false;
         });
       }
 
       const volSlider = document.getElementById('np-volume');
       if (volSlider) {
-        const handleVolInput = () => {
-          ensureAudioSessionAnchor();
-          setAppVolume(parseFloat(volSlider.value));
-        };
-        volSlider.addEventListener('input', handleVolInput);
-        volSlider.addEventListener('change', handleVolInput);
-
-        // Smooth touch scrubbing on iOS Safari range inputs
-        const syncTouchVol = clientX => {
-          const rect = volSlider.getBoundingClientRect();
-          if (rect.width <= 0) return;
-          const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-          volSlider.value = ratio.toFixed(2);
-          ensureAudioSessionAnchor();
-          setAppVolume(ratio);
-        };
-        volSlider.addEventListener('touchstart', e => {
-          if (e.touches && e.touches[0]) syncTouchVol(e.touches[0].clientX);
-        }, { passive: true });
-        volSlider.addEventListener('touchmove', e => {
-          if (e.touches && e.touches[0]) syncTouchVol(e.touches[0].clientX);
-        }, { passive: true });
-      }
-    })();
-
-    // ----------------------------------------------------------------------------
-    // 10. PWA HELPERS
-    // ----------------------------------------------------------------------------
-    // 10. PWA HELPERS & INITIALIZATION
-    // ----------------------------------------------------------------------------
-    function openPwaGuideModal() {
-      openModal('pwa-guide-modal');
-    }
-
-    function dismissPwaBanner() {
-      const banner = document.getElementById('ios-pwa-banner');
-      if (banner) banner.classList.add('hidden');
-      try {
-        localStorage.setItem('aura_pwa_banner_dismissed', '1');
-      } catch (e) {}
-    }
-
-    window.onload = function () {
-      // Generate SP MUSIC iOS Home Screen & Browser Icon
-      generateAppMusicIcon();
-
-      // Create hidden multi-audio file picker for uploading songs into Google Drive
-      const fileInput = document.createElement('input');
-      fileInput.type = 'file';
-      fileInput.id = 'drive-song-upload-input';
-      fileInput.accept = 'audio/*,.mp3,.m4a,.wav,.flac,.ogg,.aac';
-      fileInput.multiple = true;
-      fileInput.className = 'hidden';
-      fileInput.addEventListener('change', e => handleUploadSongsToDrive(e.target.files));
-      document.body.appendChild(fileInput);
-
-      // Restore saved theme preference
-      try {
-        const savedTheme = localStorage.getItem('aura_theme_mode');
-        if (savedTheme === 'light') {
-          document.documentElement.classList.remove('dark');
-          const meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute('content', '#f2f2f7');
-        }
-      } catch (e) {}
-
-      // Set formatted date subtitle & SP MUSIC title
-      const subEl = document.getElementById('header-subtitle');
-      const headerTitle = document.getElementById('header-title');
-      if (headerTitle) headerTitle.textContent = 'SP MUSIC';
-      if (subEl) {
-        subEl.textContent = new Date().toLocaleDateString('en-US', {
-          weekday: 'long',
-          month: 'short',
-          day: 'numeric'
-        });
+        volSlider.value = state.volume;
+        setAppVolume(state.volume);
+        volSlider.addEventListener('input', () => setAppVolume(volSlider.value));
+        volSlider.addEventListener('change', () => setAppVolume(volSlider.value));
       }
 
-      // Inject static SVG icons
-      const sunEl = document.getElementById('icon-sun');
-      const moonEl = document.getElementById('icon-moon');
-      const settingsEl = document.getElementById('icon-header-settings');
-      const refreshEl = document.getElementById('icon-header-refresh');
-      const pwaBannerIcon = document.getElementById('pwa-banner-icon');
-      const guideLogoIcon = document.getElementById('guide-logo-icon');
-
-      if (sunEl) sunEl.innerHTML = ICONS.sun;
-      if (moonEl) moonEl.innerHTML = ICONS.moon;
-      if (settingsEl) settingsEl.innerHTML = ICONS.settings;
-      if (refreshEl) refreshEl.innerHTML = ICONS.refresh;
-      if (pwaBannerIcon) pwaBannerIcon.innerHTML = ICONS.musicNote;
-      if (guideLogoIcon) guideLogoIcon.innerHTML = ICONS.musicNote;
-
-      document.querySelectorAll('.tab-icon').forEach(el => {
-        const key = el.dataset.icon;
-        if (key === 'listen') el.innerHTML = ICONS.tabListen;
-        if (key === 'library') el.innerHTML = ICONS.tabLibrary;
-        if (key === 'search') el.innerHTML = ICONS.tabSearch;
-      });
-
-      // Show iOS PWA Install Banner if on iOS Safari and not standalone
-      const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-      const isStandalone = window.navigator.standalone === true;
-      let bannerDismissed = false;
-      try {
-        bannerDismissed = localStorage.getItem('aura_pwa_banner_dismissed') === '1';
-      } catch (e) {}
-      if (isIos && !isStandalone && !bannerDismissed) {
+      // Show iOS Home Screen banner if running in Safari browser
+      const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+      const bannerDismissed = localStorage.getItem('aura_pwa_banner_dismissed') === '1';
+      if (isIosDevice && !isStandalone && !bannerDismissed) {
         const banner = document.getElementById('ios-pwa-banner');
         if (banner) banner.classList.remove('hidden');
       }
 
-      // Pull-to-refresh gesture on main scroll container
-      const mainScroll = document.getElementById('main-scroll');
-      if (mainScroll) {
-        let pullStartY = 0;
-        mainScroll.addEventListener('touchstart', e => {
-          if (mainScroll.scrollTop <= 0) {
-            pullStartY = e.touches[0].clientY;
-          } else {
-            pullStartY = 0;
-          }
-        }, { passive: true });
-        mainScroll.addEventListener('touchend', e => {
-          if (pullStartY > 0 && mainScroll.scrollTop <= 0) {
-            const deltaY = e.changedTouches[0].clientY - pullStartY;
-            if (deltaY > 95 && state.driveConfig && !state.isLoadingFolder) {
-              rescanDriveFolder();
-            }
-          }
-          pullStartY = 0;
-        }, { passive: true });
-      }
-
       updateHeaderSyncButtons();
-      updateVolumeSliderStyle();
-      startVisualizerLoop();
+      switchTab('listen');
 
+      // Auto-sync linked Google Drive folder on launch
       if (state.driveConfig && state.driveConfig.folderId && state.driveConfig.apiKey) {
-        fetchGoogleDriveFolderSongs(state.driveConfig.folderId, state.driveConfig.apiKey, true);
-      } else {
-        renderCurrentTab();
+        fetchGoogleDriveFolderSongs(state.driveConfig.folderId, state.driveConfig.apiKey, false);
       }
     };
   </script>
